@@ -197,27 +197,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="w-full flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg text-left"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Log Out</span>
+                      <span>Leave Session</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onOpenAuth('login')}
-                className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors"
-              >
-                Log In
-              </button>
-              <button
-                onClick={() => onOpenAuth('register')}
-                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#E63946] to-[#D90429] hover:from-[#D90429] hover:to-[#B5001D] rounded-lg shadow-lg shadow-[#E63946]/20 transition-all whitespace-nowrap"
-              >
-                Join Free
-              </button>
-            </div>
+            <button
+              onClick={() => onOpenAuth('register')}
+              className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#E63946] to-[#D90429] hover:from-[#D90429] hover:to-[#B5001D] rounded-xl shadow-lg shadow-[#E63946]/25 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Get Member Pass</span>
+            </button>
           )}
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile, SriLankanCity } from '../types';
-import { X, Sparkles, MapPin, Check } from 'lucide-react';
+import { X, Sparkles, MapPin, Check, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -26,6 +26,19 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   const [companionRate, setCompanionRate] = useState(currentUser.companionRate || '');
   const [avatarUrl, setAvatarUrl] = useState(currentUser.avatarUrl);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -132,14 +145,35 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </div>
             </div>
 
+            {/* Profile Photo Upload & Preview */}
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Avatar Photo URL</label>
-              <input
-                type="text"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
-              />
+              <label className="block text-slate-300 font-semibold mb-2">Profile Photo</label>
+              <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10">
+                <img
+                  src={avatarUrl}
+                  alt="Avatar Preview"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-[#E63946] shrink-0"
+                />
+                <div className="flex-1 space-y-2">
+                  <label className="cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all w-fit border border-white/20">
+                    <Upload className="w-3.5 h-3.5 text-[#FF758F]" />
+                    <span>Upload New Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Or enter image URL..."
+                    value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
+                    onChange={(e) => setAvatarUrl(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-white placeholder-slate-500 text-[11px]"
+                  />
+                </div>
+              </div>
             </div>
 
             <div>

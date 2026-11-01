@@ -14,8 +14,48 @@ import {
   Wine, 
   Check, 
   X,
-  Radio
+  Radio,
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react';
+
+const EVENT_FLYER_PRESETS = [
+  {
+    title: 'Skyline Lotus Vista Rooftop',
+    url: '/src/assets/images/hero_nightlife_colombo_1793512113884.jpg',
+  },
+  {
+    title: 'Sunset Beach Club & Pool Rave',
+    url: '/src/assets/images/party_event_pool_1793518326375.jpg',
+  },
+  {
+    title: 'Underground Techno Laser Vault',
+    url: '/src/assets/images/event_techno_rave_1793512116489.jpg',
+  },
+  {
+    title: 'Mirissa Golden Hour Beach Party',
+    url: '/src/assets/images/event_mirissa_beach_1793512113827.jpg',
+  },
+  {
+    title: 'VIP Luxury Nightclub Bar',
+    url: '/src/assets/images/venue_club_organizer_1793518298023.jpg',
+  },
+];
+
+const COCKTAIL_PRESETS = [
+  {
+    title: 'Artisanal Ceylon Passionfruit Sour',
+    url: '/src/assets/images/cocktails_mixology_exotic_1793518311440.jpg',
+  },
+  {
+    title: 'Smoked Chili Margarita & Arrack',
+    url: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+  },
+  {
+    title: 'VIP Velvet Club Mixology Special',
+    url: '/src/assets/images/venue_club_organizer_1793518298023.jpg',
+  },
+];
 
 interface VendorPortalProps {
   currentUser: UserProfile;
@@ -83,6 +123,32 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
 
   const vendorEvents = events.filter(e => e.vendorId === currentUser.id || currentUser.role === 'admin' || e.vendorId === 'vendor_botanik');
   const vendorCocktails = cocktails.filter(c => c.vendorId === currentUser.id || currentUser.role === 'admin' || c.vendorId === 'vendor_botanik');
+
+  const handleEventFlyerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setNewEvent(prev => ({ ...prev, flyerUrl: reader.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCocktailImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setNewCocktail(prev => ({ ...prev, imageUrl: reader.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreateEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,6 +533,67 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               </div>
             </div>
 
+            {/* Visual Party Flyer Selection */}
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-[#FF758F]" />
+                  <span>Choose Party Event Flyer</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">Click image to select</span>
+              </label>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-2">
+                {EVENT_FLYER_PRESETS.map((preset, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setNewEvent({ ...newEvent, flyerUrl: preset.url })}
+                    className={`group relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${
+                      newEvent.flyerUrl === preset.url
+                        ? 'border-[#E63946] ring-2 ring-[#E63946]/40 scale-[1.02]'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <img
+                      src={preset.url}
+                      alt={preset.title}
+                      className="w-full h-16 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-1.5">
+                      <span className="text-[10px] font-semibold text-white truncate w-full">
+                        {preset.title}
+                      </span>
+                    </div>
+                    {newEvent.flyerUrl === preset.url && (
+                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#E63946] flex items-center justify-center text-white">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <label className="flex-1 cursor-pointer py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-dashed border-white/20 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+                  <Upload className="w-3.5 h-3.5 text-[#FF758F]" />
+                  <span>Upload Party Flyer From Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEventFlyerUpload}
+                    className="hidden"
+                  />
+                </label>
+                <input
+                  type="url"
+                  placeholder="Or paste flyer URL..."
+                  value={newEvent.flyerUrl.startsWith('data:') ? '' : newEvent.flyerUrl}
+                  onChange={(e) => setNewEvent({ ...newEvent, flyerUrl: e.target.value })}
+                  className="w-full sm:w-44 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-[11px]"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-slate-400 font-semibold mb-1">Description</label>
               <textarea
@@ -584,6 +711,67 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                 onChange={(e) => setNewCocktail({ ...newCocktail, ingredientsStr: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
               />
+            </div>
+
+            {/* Visual Cocktail / Tapas Image Selection */}
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-amber-400" />
+                  <span>Choose Cocktail / Tapas Image</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">Click image to select</span>
+              </label>
+
+              <div className="grid grid-cols-3 gap-2 mb-2">
+                {COCKTAIL_PRESETS.map((preset, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setNewCocktail({ ...newCocktail, imageUrl: preset.url })}
+                    className={`group relative rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${
+                      newCocktail.imageUrl === preset.url
+                        ? 'border-amber-400 ring-2 ring-amber-400/40 scale-[1.02]'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <img
+                      src={preset.url}
+                      alt={preset.title}
+                      className="w-full h-16 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-1.5">
+                      <span className="text-[10px] font-semibold text-white truncate w-full">
+                        {preset.title}
+                      </span>
+                    </div>
+                    {newCocktail.imageUrl === preset.url && (
+                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center text-black">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <label className="flex-1 cursor-pointer py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 border border-dashed border-white/20 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all">
+                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Upload Drink Photo From Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCocktailImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <input
+                  type="url"
+                  placeholder="Or paste photo URL..."
+                  value={newCocktail.imageUrl.startsWith('data:') ? '' : newCocktail.imageUrl}
+                  onChange={(e) => setNewCocktail({ ...newCocktail, imageUrl: e.target.value })}
+                  className="w-full sm:w-44 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-[11px]"
+                />
+              </div>
             </div>
 
             <div>

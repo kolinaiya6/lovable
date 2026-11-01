@@ -172,6 +172,21 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
   UNIQUE(user_id, blocked_user_id)
 );
 
+-- 13. SUPABASE STORAGE BUCKETS (Avatars, Venue Covers, Event Flyers & Cocktail Photos)
+INSERT INTO storage.buckets (id, name, public) 
+VALUES 
+  ('avatars', 'avatars', true),
+  ('flyers', 'flyers', true),
+  ('cocktails', 'cocktails', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public avatars access" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+CREATE POLICY "Users can upload avatars" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars');
+CREATE POLICY "Public flyers access" ON storage.objects FOR SELECT USING (bucket_id = 'flyers');
+CREATE POLICY "Vendors can upload flyers" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'flyers');
+CREATE POLICY "Public cocktails access" ON storage.objects FOR SELECT USING (bucket_id = 'cocktails');
+CREATE POLICY "Vendors can upload cocktails" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'cocktails');
+
 -- ==============================================================================
 -- ENABLE SUPABASE REALTIME REPLICATION FOR LIVE CHATS, RSVP & MATCH NOTIFICATIONS
 -- ==============================================================================
@@ -243,14 +258,14 @@ CREATE POLICY "Payments ledger viewable and recorded" ON public.payments FOR ALL
 CREATE POLICY "Blocked users managed by owner" ON public.blocked_users FOR ALL USING (true);
 
 -- ==============================================================================
--- INITIAL SEED DATA (Super Admin: kolinaiya6@gmail.com, Verified Companions, Venues)
+-- INITIAL SEED DATA (Super Admin, Verified Companions, Venues)
 -- ==============================================================================
 INSERT INTO public.profiles (id, email, name, age, role, is_companion, companion_headline, companion_rate, city, distance_km, bio, looking_for, interests, avatar_url, photos, is_verified, is_online)
 VALUES 
 (
   'a1111111-1111-1111-1111-111111111111',
-  'kolinaiya6@gmail.com',
-  'Admin Kolin',
+  'admin@lovable.lk',
+  'Admin',
   32,
   'admin',
   false,

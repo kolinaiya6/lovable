@@ -417,15 +417,15 @@ export default function App() {
             />
           ) : (
             <div className="my-16 text-center max-w-md mx-auto p-8 rounded-3xl bg-[#14141B] border border-white/10 space-y-4">
-              <h2 className="text-xl font-bold text-white">Admin Authentication Required</h2>
+              <h2 className="text-xl font-bold text-white">Administrator Access Required</h2>
               <p className="text-xs text-slate-400">
-                Please sign in with administrator credentials to access central command operations.
+                Please activate an administrator profile to access central command operations.
               </p>
               <button
-                onClick={() => handleOpenAuth('login')}
-                className="w-full py-3 rounded-xl bg-[#E63946] text-white font-bold text-xs"
+                onClick={() => handleOpenAuth('register')}
+                className="w-full py-3 rounded-xl bg-[#E63946] text-white font-bold text-xs shadow-lg shadow-[#E63946]/30"
               >
-                Admin Sign In
+                Access Central Command
               </button>
             </div>
           )
