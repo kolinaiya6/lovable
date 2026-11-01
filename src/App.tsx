@@ -415,11 +415,17 @@ export default function App() {
             cocktails={cocktails}
             reports={reports}
             payments={payments}
+            onAddUser={(user) => storage.addUser(user)}
             onUpdateUser={(id, updates) => storage.updateUser(id, updates)}
             onDeleteUser={(id) => storage.deleteUser(id)}
+            onAddEvent={(event) => storage.addEvent(event)}
+            onUpdateEvent={(id, updates) => storage.updateEvent(id, updates)}
+            onDeleteEvent={(id) => storage.deleteEvent(id)}
+            onAddCocktail={(cocktail) => storage.addCocktail(cocktail)}
+            onUpdateCocktail={(id, updates) => storage.updateCocktail(id, updates)}
+            onDeleteCocktail={(id) => storage.deleteCocktail(id)}
             onDismissReport={(id) => storage.updateReportStatus(id, 'dismissed')}
             onResolveReport={(id) => storage.updateReportStatus(id, 'resolved')}
-            onDeleteEvent={(id) => storage.deleteEvent(id)}
           />
         )}
       </main>

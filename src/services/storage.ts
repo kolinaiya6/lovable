@@ -291,6 +291,12 @@ class StorageService {
     this.notify();
   }
 
+  public updateCocktail(id: string, updates: Partial<CocktailItem>) {
+    const list = this.getCocktails().map(c => c.id === id ? { ...c, ...updates } : c);
+    localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(list));
+    this.notify();
+  }
+
   public deleteCocktail(id: string) {
     const list = this.getCocktails().filter(c => c.id !== id);
     localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(list));
