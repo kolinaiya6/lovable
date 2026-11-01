@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, SriLankanCity } from '../types';
+import { UserProfile, SriLankanCity, ALL_SRI_LANKAN_CITIES } from '../types';
 import { X, Sparkles, MapPin, Check, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface ProfileEditModalProps {
@@ -121,15 +121,14 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <label className="block text-slate-300 font-semibold mb-1">City / Region</label>
                 <select
                   value={city}
-                  onChange={(e) => setCity(e.target.value as any)}
+                  onChange={(e) => setCity(e.target.value as SriLankanCity)}
                   className="w-full px-3 py-2 rounded-xl bg-[#1C1C26] border border-white/10 text-white"
                 >
-                  <option value="Colombo">Colombo</option>
-                  <option value="Mirissa">Mirissa</option>
-                  <option value="Weligama">Weligama</option>
-                  <option value="Galle">Galle</option>
-                  <option value="Ella">Ella</option>
-                  <option value="Kandy">Kandy</option>
+                  {ALL_SRI_LANKAN_CITIES.map((c) => (
+                    <option key={c} value={c} className="bg-[#1C1C26] text-white">
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
 

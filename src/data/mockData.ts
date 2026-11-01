@@ -4,6 +4,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_admin',
     email: 'kolinaiya6@gmail.com',
+    password: 'Admin@123456',
     name: 'Admin Kolin',
     age: 32,
     role: 'admin',
@@ -22,6 +23,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_senuri',
     email: 'senuri@lovable.lk',
+    password: 'Lovable@123456',
     name: 'Senuri Jayawardena',
     age: 26,
     role: 'user',
@@ -46,6 +48,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_natasha',
     email: 'natasha@lovable.lk',
+    password: 'Lovable@123456',
     name: 'Natasha Fernando',
     age: 24,
     role: 'user',
@@ -70,6 +73,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_arjun',
     email: 'arjun@party.lk',
+    password: 'Party@123456',
     name: 'Arjun Perera',
     age: 29,
     role: 'user',
@@ -92,6 +96,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'user_dinesh',
     email: 'dinesh@party.lk',
+    password: 'Party@123456',
     name: 'Dinesh Wickramasinghe',
     age: 31,
     role: 'user',
@@ -110,6 +115,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'vendor_botanik',
     email: 'botanik@rooftop.lk',
+    password: 'Venue@123456',
     name: 'Botanik Bistro & Rooftop',
     age: 5,
     role: 'vendor',

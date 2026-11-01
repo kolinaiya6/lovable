@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile, PartyEvent, CocktailItem, SriLankanCity } from '../types';
+import { UserProfile, PartyEvent, CocktailItem, SriLankanCity, ALL_SRI_LANKAN_CITIES } from '../types';
 import { 
   Plus, 
   Trash2, 
@@ -497,15 +497,14 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                 <label className="block text-slate-400 font-semibold mb-1">City</label>
                 <select
                   value={newEvent.city}
-                  onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value as any })}
+                  onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value as SriLankanCity })}
                   className="w-full px-3 py-2 rounded-xl bg-[#1C1C26] border border-white/10 text-white"
                 >
-                  <option value="Colombo">Colombo</option>
-                  <option value="Mirissa">Mirissa</option>
-                  <option value="Weligama">Weligama</option>
-                  <option value="Galle">Galle</option>
-                  <option value="Ella">Ella</option>
-                  <option value="Kandy">Kandy</option>
+                  {ALL_SRI_LANKAN_CITIES.map((c) => (
+                    <option key={c} value={c} className="bg-[#1C1C26] text-white">
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

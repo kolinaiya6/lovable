@@ -55,10 +55,17 @@ class StorageService {
     if (!localStorage.getItem(STORAGE_KEYS.PAYMENTS)) {
       localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(INITIAL_PAYMENTS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
-      // Default to Super-Admin kolinaiya6@gmail.com
-      const admin = INITIAL_USERS.find(u => u.email === 'kolinaiya6@gmail.com') || INITIAL_USERS[0];
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(admin));
+    // Clean visitor state: Clear any auto-assigned admin session from previous runs so visitors start unauthenticated as guests
+    try {
+      const existingUserStr = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      if (existingUserStr) {
+        const parsed = JSON.parse(existingUserStr);
+        if (parsed?.email === 'kolinaiya6@gmail.com' && !sessionStorage.getItem('lovable_admin_verified')) {
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        }
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
     if (!localStorage.getItem(STORAGE_KEYS.MESSAGES)) {
       const sampleMessages: ChatMessage[] = [
@@ -129,9 +136,32 @@ class StorageService {
     return this.getUsers().find(u => u.id === id);
   }
 
+  public authenticateUser(email: string, password: string): { success: boolean; user?: UserProfile; error?: string } {
+    const cleanEmail = email.trim().toLowerCase();
+    const users = this.getUsers();
+    const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      return { success: false, error: 'No account registered with this email. Please register for a pass.' };
+    }
+    if (user.password && user.password !== password) {
+      return { success: false, error: 'Incorrect password. Please try again.' };
+    }
+    if (!user.password && password) {
+      user.password = password;
+      this.updateUser(user.id, { password });
+    }
+    this.setCurrentUser(user);
+    return { success: true, user };
+  }
+
   public addUser(user: UserProfile) {
     const list = this.getUsers();
-    list.push(user);
+    const index = list.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
+    if (index >= 0) {
+      list[index] = { ...list[index], ...user };
+    } else {
+      list.push(user);
+    }
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(list));
     this.notify();
   }

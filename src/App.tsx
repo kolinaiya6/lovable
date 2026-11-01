@@ -94,6 +94,13 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Guard: Never show admin on index/discovery or to non-admins
+  useEffect(() => {
+    if (activeTab === 'admin' && currentUser?.role !== 'admin') {
+      setActiveTab('discovery');
+    }
+  }, [activeTab, currentUser]);
+
   // Filter out blocked users from main directory
   const availableUsers = users.filter(u => !blockedUserIds.includes(u.id));
   const companionsList = availableUsers.filter(u => u.isCompanion || u.role === 'user');
@@ -399,36 +406,21 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 6: SUPER ADMIN CENTRAL COMMAND */}
-        {activeTab === 'admin' && (
-          currentUser ? (
-            <AdminConsole
-              currentUser={currentUser}
-              users={users}
-              events={events}
-              cocktails={cocktails}
-              reports={reports}
-              payments={payments}
-              onUpdateUser={(id, updates) => storage.updateUser(id, updates)}
-              onDeleteUser={(id) => storage.deleteUser(id)}
-              onDismissReport={(id) => storage.updateReportStatus(id, 'dismissed')}
-              onResolveReport={(id) => storage.updateReportStatus(id, 'resolved')}
-              onDeleteEvent={(id) => storage.deleteEvent(id)}
-            />
-          ) : (
-            <div className="my-16 text-center max-w-md mx-auto p-8 rounded-3xl bg-[#14141B] border border-white/10 space-y-4">
-              <h2 className="text-xl font-bold text-white">Administrator Access Required</h2>
-              <p className="text-xs text-slate-400">
-                Please activate an administrator profile to access central command operations.
-              </p>
-              <button
-                onClick={() => handleOpenAuth('register')}
-                className="w-full py-3 rounded-xl bg-[#E63946] text-white font-bold text-xs shadow-lg shadow-[#E63946]/30"
-              >
-                Access Central Command
-              </button>
-            </div>
-          )
+        {/* VIEW 6: SUPER ADMIN CENTRAL COMMAND (Only rendered for authenticated admin) */}
+        {activeTab === 'admin' && currentUser?.role === 'admin' && (
+          <AdminConsole
+            currentUser={currentUser}
+            users={users}
+            events={events}
+            cocktails={cocktails}
+            reports={reports}
+            payments={payments}
+            onUpdateUser={(id, updates) => storage.updateUser(id, updates)}
+            onDeleteUser={(id) => storage.deleteUser(id)}
+            onDismissReport={(id) => storage.updateReportStatus(id, 'dismissed')}
+            onResolveReport={(id) => storage.updateReportStatus(id, 'resolved')}
+            onDeleteEvent={(id) => storage.deleteEvent(id)}
+          />
         )}
       </main>
 

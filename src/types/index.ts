@@ -2,17 +2,59 @@ export type UserRole = 'user' | 'vendor' | 'admin';
 
 export type SriLankanCity = 
   | 'Colombo'
-  | 'Mirissa'
-  | 'Weligama'
+  | 'Mount Lavinia'
+  | 'Negombo'
+  | 'Bentota'
+  | 'Hikkaduwa'
   | 'Galle'
+  | 'Unawatuna'
+  | 'Ahangama'
+  | 'Weligama'
+  | 'Mirissa'
+  | 'Matara'
+  | 'Hiriketiya'
+  | 'Tangalle'
   | 'Ella'
   | 'Kandy'
-  | 'Hiriketiya'
-  | 'Arugam Bay';
+  | 'Nuwara Eliya'
+  | 'Sigiriya'
+  | 'Dambulla'
+  | 'Anuradhapura'
+  | 'Trincomalee'
+  | 'Arugam Bay'
+  | 'Batticaloa'
+  | 'Jaffna';
+
+export const ALL_SRI_LANKAN_CITIES: SriLankanCity[] = [
+  'Colombo',
+  'Mount Lavinia',
+  'Negombo',
+  'Bentota',
+  'Hikkaduwa',
+  'Galle',
+  'Unawatuna',
+  'Ahangama',
+  'Weligama',
+  'Mirissa',
+  'Matara',
+  'Hiriketiya',
+  'Tangalle',
+  'Ella',
+  'Kandy',
+  'Nuwara Eliya',
+  'Sigiriya',
+  'Dambulla',
+  'Anuradhapura',
+  'Trincomalee',
+  'Arugam Bay',
+  'Batticaloa',
+  'Jaffna',
+];
 
 export interface UserProfile {
   id: string;
   email: string;
+  password?: string;
   name: string;
   age: number;
   role: UserRole;
