@@ -1,0 +1,7 @@
+{
+  "name": "Lovable LK — Sri Lanka Nightlife & Dating",
+  "description": "Sri Lanka's premier nightlife, dating, party companions, and club discovery platform with real-time matching, events RSVP, and vendor portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
