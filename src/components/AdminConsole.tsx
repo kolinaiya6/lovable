@@ -36,6 +36,7 @@ import {
   Flame 
 } from 'lucide-react';
 import { storage } from '../services/storage';
+import { generateUUID } from '../utils/uuid';
 
 interface AdminConsoleProps {
   currentUser: UserProfile;
@@ -237,7 +238,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       });
     } else {
       const newUser: UserProfile = {
-        id: `usr_${Date.now()}`,
+        id: generateUUID(),
         email: userFormData.email.trim().toLowerCase(),
         password: userFormData.password || 'Lovable@123456',
         name: userFormData.name.trim(),
@@ -351,7 +352,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       }
     } else {
       const newEvt: PartyEvent = {
-        id: `evt_${Date.now()}`,
+        id: generateUUID(),
         title: eventFormData.title,
         venueName: eventFormData.venueName,
         city: eventFormData.city,
@@ -441,7 +442,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       }
     } else {
       const newCocktail: CocktailItem = {
-        id: `ck_${Date.now()}`,
+        id: generateUUID(),
         name: cocktailFormData.name,
         venueName: cocktailFormData.venueName,
         city: cocktailFormData.city,

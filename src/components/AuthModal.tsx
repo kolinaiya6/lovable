@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, UserRole, SriLankanCity, ALL_SRI_LANKAN_CITIES } from '../types';
 import { storage } from '../services/storage';
+import { generateUUID } from '../utils/uuid';
 import { 
   X, 
   Sparkles, 
@@ -124,7 +125,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80`;
 
     const newUser: UserProfile = {
-      id: `usr_${Date.now()}`,
+      id: generateUUID(),
       email: email.trim().toLowerCase(),
       password: password,
       name: name.trim(),

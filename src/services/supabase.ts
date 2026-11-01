@@ -17,7 +17,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 export const FULL_SUPABASE_SQL = `-- ==============================================================================
 -- LOVABLE LK — SRI LANKA NIGHTLIFE, DATING & COMPANION PLATFORM
--- COMPLETE PRODUCTION SUPABASE POSTGRESQL SCHEMA WITH AUTH, RLS & REALTIME
+-- COMPLETE PRODUCTION SUPABASE POSTGRESQL SCHEMA WITH AUTH, RLS, STORAGE & REALTIME
 -- Target Project URL: https://gmtzbwgbgodrfzvmlimd.supabase.co
 -- Paste and run this script in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/gmtzbwgbgodrfzvmlimd/sql
@@ -91,16 +91,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 4. EVENT ATTENDEES TABLE (Guestlists & RSVPs)
-CREATE TABLE IF NOT EXISTS public.event_attendees (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(event_id, user_id)
-);
-
--- 5. SIGNATURE COCKTAILS & TAPAS (Nightclub / Bar Mixology Menus)
+-- 4. SIGNATURE COCKTAILS & TAPAS (Nightclub / Bar Mixology Menus)
 CREATE TABLE IF NOT EXISTS public.cocktails (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
@@ -115,7 +106,7 @@ CREATE TABLE IF NOT EXISTS public.cocktails (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. REALTIME CHAT MESSAGES
+-- 5. REALTIME CHAT MESSAGES
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   sender_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -127,7 +118,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. MUTUAL DATING MATCHES
+-- 6. MUTUAL DATING MATCHES
 CREATE TABLE IF NOT EXISTS public.matches (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user1_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -137,7 +128,7 @@ CREATE TABLE IF NOT EXISTS public.matches (
   UNIQUE(user1_id, user2_id)
 );
 
--- 8. LOVE & FRIEND REQUESTS
+-- 7. LOVE & FRIEND REQUESTS
 CREATE TABLE IF NOT EXISTS public.friend_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   from_user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -147,7 +138,7 @@ CREATE TABLE IF NOT EXISTS public.friend_requests (
   UNIQUE(from_user_id, to_user_id)
 );
 
--- 9. SAVED / BOOKMARKED EVENTS
+-- 8. SAVED / BOOKMARKED EVENTS
 CREATE TABLE IF NOT EXISTS public.saved_events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -156,7 +147,7 @@ CREATE TABLE IF NOT EXISTS public.saved_events (
   UNIQUE(user_id, event_id)
 );
 
--- 10. CONTENT MODERATION REPORTS (Zero-Tolerance UGC Safety)
+-- 9. CONTENT MODERATION REPORTS (Zero-Tolerance Safety)
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   reporter_id TEXT,
@@ -169,7 +160,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 11. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
+-- 10. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vendor_id UUID,
@@ -182,7 +173,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 12. BLOCKED USERS TABLE
+-- 11. BLOCKED USERS TABLE
 CREATE TABLE IF NOT EXISTS public.blocked_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -190,6 +181,61 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, blocked_user_id)
 );
+
+-- ==============================================================================
+-- PERMISSIONS & ROLES (Ensures anon and authenticated users can read/write)
+-- ==============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated, service_role;
+
+-- ==============================================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ==============================================================================
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cocktails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.saved_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blocked_users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public access on profiles" ON public.profiles;
+CREATE POLICY "Public access on profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on events" ON public.events;
+CREATE POLICY "Public access on events" ON public.events FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on cocktails" ON public.cocktails;
+CREATE POLICY "Public access on cocktails" ON public.cocktails FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on messages" ON public.messages;
+CREATE POLICY "Public access on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on matches" ON public.matches;
+CREATE POLICY "Public access on matches" ON public.matches FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on friend_requests" ON public.friend_requests;
+CREATE POLICY "Public access on friend_requests" ON public.friend_requests FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on saved_events" ON public.saved_events;
+CREATE POLICY "Public access on saved_events" ON public.saved_events FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on reports" ON public.reports;
+CREATE POLICY "Public access on reports" ON public.reports FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on payments" ON public.payments;
+CREATE POLICY "Public access on payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on blocked_users" ON public.blocked_users;
+CREATE POLICY "Public access on blocked_users" ON public.blocked_users FOR ALL USING (true) WITH CHECK (true);
 
 -- ==============================================================================
 -- AUTOMATIC REGISTRATION TRIGGER (auth.users -> public.profiles synchronization)
@@ -205,6 +251,7 @@ BEGIN
   INSERT INTO public.profiles (
     id,
     email,
+    password_hash,
     name,
     role,
     city,
@@ -225,6 +272,7 @@ BEGIN
   VALUES (
     NEW.id,
     NEW.email,
+    NEW.encrypted_password,
     COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
     CASE 
       WHEN LOWER(NEW.email) = 'kolinaiya6@gmail.com' THEN 'admin'
@@ -290,7 +338,6 @@ ON CONFLICT (id) DO UPDATE SET
   public = true,
   file_size_limit = 10485760;
 
--- Safe storage policies
 DROP POLICY IF EXISTS "Public can view avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Public can view venue-covers" ON storage.objects;
 DROP POLICY IF EXISTS "Public can view flyers" ON storage.objects;
@@ -305,18 +352,18 @@ CREATE POLICY "Public can view venue-covers" ON storage.objects FOR SELECT USING
 CREATE POLICY "Public can view flyers" ON storage.objects FOR SELECT USING (bucket_id = 'flyers');
 CREATE POLICY "Public can view cocktails" ON storage.objects FOR SELECT USING (bucket_id = 'cocktails');
 
-CREATE POLICY "Anyone can upload avatars" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars');
-CREATE POLICY "Anyone can upload venue-covers" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'venue-covers');
-CREATE POLICY "Anyone can upload flyers" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'flyers');
-CREATE POLICY "Anyone can upload cocktails" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'cocktails');
+CREATE POLICY "Anyone can upload avatars" ON storage.objects FOR ALL USING (bucket_id = 'avatars') WITH CHECK (bucket_id = 'avatars');
+CREATE POLICY "Anyone can upload venue-covers" ON storage.objects FOR ALL USING (bucket_id = 'venue-covers') WITH CHECK (bucket_id = 'venue-covers');
+CREATE POLICY "Anyone can upload flyers" ON storage.objects FOR ALL USING (bucket_id = 'flyers') WITH CHECK (bucket_id = 'flyers');
+CREATE POLICY "Anyone can upload cocktails" ON storage.objects FOR ALL USING (bucket_id = 'cocktails') WITH CHECK (bucket_id = 'cocktails');
 
 -- ==============================================================================
--- REALTIME REPLICATION (Instant Chat & Live RSVP Attendance)
+-- REALTIME REPLICATION (Instant Chat, Events, Cocktails & Live Attendance)
 -- ==============================================================================
 DO $$
 DECLARE
   t text;
-  tables_to_add text[] := ARRAY['messages', 'events', 'event_attendees', 'matches', 'friend_requests'];
+  tables_to_add text[] := ARRAY['profiles', 'events', 'cocktails', 'messages', 'matches', 'friend_requests', 'saved_events', 'reports', 'payments', 'blocked_users'];
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
     CREATE PUBLICATION supabase_realtime;
@@ -334,62 +381,6 @@ EXCEPTION
   WHEN OTHERS THEN
     NULL;
 END $$;
-
--- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ==============================================================================
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_attendees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cocktails ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.saved_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.blocked_users ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
-DROP POLICY IF EXISTS "Users can insert and update their profile" ON public.profiles;
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
-CREATE POLICY "Users can insert and update their profile" ON public.profiles FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Public events are viewable by everyone" ON public.events;
-DROP POLICY IF EXISTS "Vendors and admins can manage events" ON public.events;
-CREATE POLICY "Public events are viewable by everyone" ON public.events FOR SELECT USING (true);
-CREATE POLICY "Vendors and admins can manage events" ON public.events FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Attendees are viewable by everyone" ON public.event_attendees;
-DROP POLICY IF EXISTS "Users can RSVP to events" ON public.event_attendees;
-CREATE POLICY "Attendees are viewable by everyone" ON public.event_attendees FOR SELECT USING (true);
-CREATE POLICY "Users can RSVP to events" ON public.event_attendees FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Cocktails viewable by everyone" ON public.cocktails;
-DROP POLICY IF EXISTS "Vendors can manage cocktails" ON public.cocktails;
-CREATE POLICY "Cocktails viewable by everyone" ON public.cocktails FOR SELECT USING (true);
-CREATE POLICY "Vendors can manage cocktails" ON public.cocktails FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Users can view and send messages" ON public.messages;
-CREATE POLICY "Users can view and send messages" ON public.messages FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Users can view and create matches" ON public.matches;
-CREATE POLICY "Users can view and create matches" ON public.matches FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Users can manage friend requests" ON public.friend_requests;
-CREATE POLICY "Users can manage friend requests" ON public.friend_requests FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Users can manage saved events" ON public.saved_events;
-CREATE POLICY "Users can manage saved events" ON public.saved_events FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Users can lodge reports and admin can read" ON public.reports;
-CREATE POLICY "Users can lodge reports and admin can read" ON public.reports FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Payments ledger viewable and recorded" ON public.payments;
-CREATE POLICY "Payments ledger viewable and recorded" ON public.payments FOR ALL USING (true);
-
-DROP POLICY IF EXISTS "Blocked users managed by owner" ON public.blocked_users;
-CREATE POLICY "Blocked users managed by owner" ON public.blocked_users FOR ALL USING (true);
 
 -- ==============================================================================
 -- PRODUCTION LOGINS & SEED ACCOUNTS (auth.users + public.profiles)
@@ -512,11 +503,12 @@ EXCEPTION
 END $$;
 
 -- Populate public.profiles (guaranteed even if auth trigger was pending)
-INSERT INTO public.profiles (id, email, name, age, role, is_companion, companion_headline, companion_rate, city, distance_km, bio, looking_for, interests, avatar_url, photos, is_verified, is_online)
+INSERT INTO public.profiles (id, email, password_hash, name, age, role, is_companion, companion_headline, companion_rate, city, distance_km, bio, looking_for, interests, avatar_url, photos, is_verified, is_online)
 VALUES 
 (
   'a1111111-1111-1111-1111-111111111111',
   'kolinaiya6@gmail.com',
+  'Admin@123456',
   'Admin Kolin',
   32,
   'admin',
@@ -536,6 +528,7 @@ VALUES
 (
   'b2222222-2222-2222-2222-222222222222',
   'senuri@lovable.lk',
+  'Lovable@123456',
   'Senuri Jayawardena',
   26,
   'user',
@@ -555,6 +548,7 @@ VALUES
 (
   'c3333333-3333-3333-3333-333333333333',
   'natasha@lovable.lk',
+  'Lovable@123456',
   'Natasha Fernando',
   24,
   'user',
@@ -574,6 +568,7 @@ VALUES
 (
   'd4444444-4444-4444-4444-444444444444',
   'botanik@rooftop.lk',
+  'Venue@123456',
   'Botanik Bistro & Rooftop',
   5,
   'vendor',
@@ -593,6 +588,7 @@ VALUES
 (
   'e5555555-5555-5555-5555-555555555555',
   'arjun@party.lk',
+  'Party@123456',
   'Arjun Perera',
   29,
   'user',
@@ -612,6 +608,7 @@ VALUES
 (
   'f6666666-6666-6666-6666-666666666666',
   'dinesh@party.lk',
+  'Party@123456',
   'Dinesh Wickramasinghe',
   31,
   'user',
@@ -630,11 +627,12 @@ VALUES
 )
 ON CONFLICT (id) DO UPDATE SET
   email = EXCLUDED.email,
+  password_hash = EXCLUDED.password_hash,
   name = EXCLUDED.name,
   role = EXCLUDED.role;
 
--- 14. INITIAL PARTIES & RAVES
-INSERT INTO public.events (id, title, venue_name, city, address, category, date_str, time_str, entry_price, flyer_url, description, dj_lineup, phone, vendor_id, is_active_tonight, is_live_dj)
+-- 12. INITIAL PARTIES & RAVES
+INSERT INTO public.events (id, title, venue_name, city, address, category, date_str, time_str, entry_price, flyer_url, description, dj_lineup, attendee_ids, vendor_id, phone, is_active_tonight, is_live_dj)
 VALUES
 (
   '11111111-aaaa-1111-1111-111111111111',
@@ -649,8 +647,9 @@ VALUES
   'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
   'Colombo’s premier open-air rooftop session featuring ambient melodic house, bespoke cocktail pairing, and 360° panoramic views of the illuminated Colombo Lotus Tower.',
   ARRAY['DJ Ashan (Resident)', 'Maya Sky (Berlin)', 'Suran Jay'],
-  '+94 77 789 2200',
+  ARRAY['a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
   'd4444444-4444-4444-4444-444444444444',
+  '+94 77 789 2200',
   true,
   true
 ),
@@ -667,8 +666,9 @@ VALUES
   'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80',
   'Golden hour sunset session on the pristine sands of Weligama Bay. Warm wooden lantern illumination, barefoot dancing, tropical cocktails, and international guest selectors.',
   ARRAY['Sound of Ceylon', 'DJ Leo Mirissa', 'Elena Waves'],
-  '+94 41 225 9911',
+  ARRAY['c3333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111'],
   'd4444444-4444-4444-4444-444444444444',
+  '+94 41 225 9911',
   true,
   true
 ),
@@ -685,14 +685,34 @@ VALUES
   'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?auto=format&fit=crop&w=800&q=80',
   'Sri Lanka’s premier industrial warehouse techno experience with immersive red laser mapping, Funktion-One sound engineering, and Berlin underground vibes.',
   ARRAY['Kavinda Live', 'Sub-Zero Colombo', 'Vortex LK'],
-  '+94 71 882 1199',
+  ARRAY['b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
   'd4444444-4444-4444-4444-444444444444',
+  '+94 71 882 1199',
   false,
   true
+),
+(
+  '44444444-ffff-4444-4444-444444444444',
+  'Champagne & Rose Ladies Night',
+  'Cloud 9 Terrace Lounge',
+  'Colombo',
+  'Galle Face Green Promenade, Colombo',
+  'Ladies Night',
+  'Every Wednesday • 8:00 PM',
+  '20:00 - 02:00',
+  'Free Entry for Ladies + 2 Free Cocktails',
+  'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
+  'The mid-week party haven for chic partygoers. Complimentary prosecco glasses on entry, live saxophonist performance, and premium tapas discounts.',
+  ARRAY['DJ Dimuth K', 'Sax by Shanaka'],
+  ARRAY['b2222222-2222-2222-2222-222222222222', 'c3333333-3333-3333-3333-333333333333'],
+  'd4444444-4444-4444-4444-444444444444',
+  '+94 11 234 5678',
+  false,
+  false
 )
 ON CONFLICT (id) DO NOTHING;
 
--- 15. INITIAL SIGNATURE COCKTAILS
+-- 13. INITIAL SIGNATURE COCKTAILS
 INSERT INTO public.cocktails (id, name, venue_name, city, price_lkr, description, ingredients, category, image_url, vendor_id)
 VALUES
 (
@@ -717,6 +737,30 @@ VALUES
   ARRAY['Tequila Reposado', 'Cointreau', 'Jaffna Lime', 'Smoked Kochchi Chili', 'Himalayan Salt'],
   'Signature Cocktail',
   'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
+  'd4444444-4444-4444-4444-444444444444'
+),
+(
+  '66666666-aaaa-6666-6666-666666666666',
+  'Crispy Negombo Lagoon Crab Croquettes',
+  'Botanik Bistro & Rooftop',
+  'Colombo',
+  3600,
+  'Hand-picked Negombo crab meat folded with spiced potato and curry leaf emulsion, served with tamarind aioli.',
+  ARRAY['Fresh Lagoon Crab', 'Curry Leaf Dust', 'Panko Crumb', 'Spiced Tamarind Aioli'],
+  'Tapas & Bites',
+  'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80',
+  'd4444444-4444-4444-4444-444444444444'
+),
+(
+  '77777777-bbbb-7777-7777-777777777777',
+  'Kandy Queen Rose Gin Fizz',
+  'The Vault 07',
+  'Colombo',
+  2600,
+  'Colombo No. 7 Gin infused with organic Damask rose petal syrup, lemongrass essence, cucumber ribbons, and elderflower tonic.',
+  ARRAY['Colombo No. 7 Gin', 'Rose Cordial', 'Lemongrass', 'Fever-Tree Tonic', 'Fresh Cucumber'],
+  'Signature Cocktail',
+  'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80',
   'd4444444-4444-4444-4444-444444444444'
 )
 ON CONFLICT (id) DO NOTHING;

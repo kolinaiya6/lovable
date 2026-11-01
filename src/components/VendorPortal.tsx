@@ -20,6 +20,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { PayHereSubscription } from './PayHereSubscription';
+import { generateUUID } from '../utils/uuid';
 
 interface VendorPortalProps {
   currentUser: UserProfile;
@@ -122,7 +123,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80';
 
     const created: PartyEvent = {
-      id: `evt_${Date.now()}`,
+      id: generateUUID(),
       title: newEvent.title,
       venueName: newEvent.venueName,
       city: newEvent.city as SriLankanCity,
@@ -153,7 +154,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80';
 
     const created: CocktailItem = {
-      id: `ck_${Date.now()}`,
+      id: generateUUID(),
       name: newCocktail.name,
       venueName: newCocktail.venueName,
       city: newCocktail.city as SriLankanCity,

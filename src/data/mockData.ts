@@ -2,7 +2,7 @@ import { UserProfile, PartyEvent, CocktailItem, ContentReport, VendorPayment } f
 
 export const INITIAL_USERS: UserProfile[] = [
   {
-    id: 'user_admin',
+    id: 'a1111111-1111-1111-1111-111111111111',
     email: 'kolinaiya6@gmail.com',
     password: 'Admin@123456',
     name: 'Admin Kolin',
@@ -21,7 +21,7 @@ export const INITIAL_USERS: UserProfile[] = [
     createdAt: '2026-01-15T10:00:00Z',
   },
   {
-    id: 'user_senuri',
+    id: 'b2222222-2222-2222-2222-222222222222',
     email: 'senuri@lovable.lk',
     password: 'Lovable@123456',
     name: 'Senuri Jayawardena',
@@ -46,7 +46,7 @@ export const INITIAL_USERS: UserProfile[] = [
     createdAt: '2026-02-10T14:30:00Z',
   },
   {
-    id: 'user_natasha',
+    id: 'c3333333-3333-3333-3333-333333333333',
     email: 'natasha@lovable.lk',
     password: 'Lovable@123456',
     name: 'Natasha Fernando',
@@ -71,7 +71,7 @@ export const INITIAL_USERS: UserProfile[] = [
     createdAt: '2026-03-01T09:15:00Z',
   },
   {
-    id: 'user_arjun',
+    id: 'e5555555-5555-5555-5555-555555555555',
     email: 'arjun@party.lk',
     password: 'Party@123456',
     name: 'Arjun Perera',
@@ -94,7 +94,7 @@ export const INITIAL_USERS: UserProfile[] = [
     createdAt: '2026-02-18T18:00:00Z',
   },
   {
-    id: 'user_dinesh',
+    id: 'f6666666-6666-6666-6666-666666666666',
     email: 'dinesh@party.lk',
     password: 'Party@123456',
     name: 'Dinesh Wickramasinghe',
@@ -113,7 +113,7 @@ export const INITIAL_USERS: UserProfile[] = [
     createdAt: '2026-03-12T11:45:00Z',
   },
   {
-    id: 'vendor_botanik',
+    id: 'd4444444-4444-4444-4444-444444444444',
     email: 'botanik@rooftop.lk',
     password: 'Venue@123456',
     name: 'Botanik Bistro & Rooftop',
@@ -136,7 +136,7 @@ export const INITIAL_USERS: UserProfile[] = [
 
 export const INITIAL_EVENTS: PartyEvent[] = [
   {
-    id: 'evt_1',
+    id: '11111111-aaaa-1111-1111-111111111111',
     title: 'Skyline Euphoria: Lotus Vista Sessions',
     venueName: 'Botanik Rooftop Bistro & Bar',
     city: 'Colombo',
@@ -148,14 +148,14 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     flyerUrl: '/src/assets/images/hero_nightlife_colombo_1793512113884.jpg',
     description: 'Colombo’s premier open-air rooftop session featuring ambient melodic house, bespoke cocktail pairing, and 360° panoramic views of the illuminated Colombo Lotus Tower.',
     djLineup: ['DJ Ashan (Resident)', 'Maya Sky (Berlin)', 'Suran Jay'],
-    attendeeIds: ['user_admin', 'user_senuri', 'user_arjun'],
-    vendorId: 'vendor_botanik',
+    attendeeIds: ['a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
     phone: '+94 77 789 2200',
     isActiveTonight: true,
     isLiveDJ: true,
   },
   {
-    id: 'evt_2',
+    id: '22222222-bbbb-2222-2222-222222222222',
     title: 'Weligama Sunset Ritual & Beach Rave',
     venueName: 'Weligama Beach Club & Deck',
     city: 'Weligama',
@@ -167,14 +167,14 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     flyerUrl: '/src/assets/images/event_mirissa_beach_1793512113827.jpg',
     description: 'Golden hour sunset session on the pristine sands of Weligama Bay. Warm wooden lantern illumination, barefoot dancing, tropical cocktails, and international guest selectors.',
     djLineup: ['Sound of Ceylon', 'DJ Leo Mirissa', 'Elena Waves'],
-    attendeeIds: ['user_natasha', 'user_admin'],
-    vendorId: 'vendor_botanik',
+    attendeeIds: ['c3333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111'],
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
     phone: '+94 41 225 9911',
     isActiveTonight: true,
     isLiveDJ: true,
   },
   {
-    id: 'evt_3',
+    id: '33333333-cccc-3333-3333-333333333333',
     title: 'Underground Pulse: Red Room Techno',
     venueName: 'The Vault 07',
     city: 'Colombo',
@@ -186,14 +186,14 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     flyerUrl: '/src/assets/images/event_techno_rave_1793512116489.jpg',
     description: 'Sri Lanka’s premier industrial warehouse techno experience with immersive red laser mapping, Funktion-One sound engineering, and Berlin underground vibes.',
     djLineup: ['Kavinda Live', 'Sub-Zero Colombo', 'Vortex LK'],
-    attendeeIds: ['user_senuri', 'user_arjun'],
-    vendorId: 'vendor_botanik',
+    attendeeIds: ['b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
     phone: '+94 71 882 1199',
     isActiveTonight: false,
     isLiveDJ: true,
   },
   {
-    id: 'evt_4',
+    id: '44444444-ffff-4444-4444-444444444444',
     title: 'Champagne & Rose Ladies Night',
     venueName: 'Cloud 9 Terrace Lounge',
     city: 'Colombo',
@@ -205,8 +205,8 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     flyerUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
     description: 'The mid-week party haven for chic partygoers. Complimentary prosecco glasses on entry, live saxophonist performance, and premium tapas discounts.',
     djLineup: ['DJ Dimuth K', 'Sax by Shanaka'],
-    attendeeIds: ['user_senuri', 'user_natasha'],
-    vendorId: 'vendor_botanik',
+    attendeeIds: ['b2222222-2222-2222-2222-222222222222', 'c3333333-3333-3333-3333-333333333333'],
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
     phone: '+94 11 234 5678',
     isActiveTonight: false,
     isLiveDJ: false,
@@ -215,7 +215,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
 
 export const INITIAL_COCKTAILS: CocktailItem[] = [
   {
-    id: 'ck_1',
+    id: '44444444-dddd-4444-4444-444444444444',
     name: 'Ceylon Passion & Old Reserve Arrack Sour',
     venueName: 'Botanik Bistro & Rooftop',
     city: 'Colombo',
@@ -224,10 +224,10 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     ingredients: ['Ceylon Arrack 100% Coconut', 'Passionfruit Puree', 'Ceylon Cinnamon Syrup', 'Citrus', 'Egg White'],
     category: 'Signature Cocktail',
     imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
-    vendorId: 'vendor_botanik',
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
-    id: 'ck_2',
+    id: '55555555-eeee-5555-5555-555555555555',
     name: 'Mirissa Sunset Smoked Chili Margarita',
     venueName: 'Weligama Beach Club',
     city: 'Mirissa',
@@ -236,10 +236,10 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     ingredients: ['Tequila Reposado', 'Cointreau', 'Jaffna Lime', 'Smoked Kochchi Chili', 'Himalayan Salt'],
     category: 'Signature Cocktail',
     imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
-    vendorId: 'vendor_botanik',
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
-    id: 'ck_3',
+    id: '66666666-aaaa-6666-6666-666666666666',
     name: 'Crispy Negombo Lagoon Crab Croquettes',
     venueName: 'Botanik Bistro & Rooftop',
     city: 'Colombo',
@@ -248,10 +248,10 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     ingredients: ['Fresh Lagoon Crab', 'Curry Leaf Dust', 'Panko Crumb', 'Spiced Tamarind Aioli'],
     category: 'Tapas & Bites',
     imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
-    vendorId: 'vendor_botanik',
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
-    id: 'ck_4',
+    id: '77777777-bbbb-7777-7777-777777777777',
     name: 'Kandy Queen Rose Gin Fizz',
     venueName: 'The Vault 07',
     city: 'Colombo',
@@ -260,16 +260,16 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     ingredients: ['Colombo No. 7 Gin', 'Rose Cordial', 'Lemongrass', 'Fever-Tree Tonic', 'Fresh Cucumber'],
     category: 'Signature Cocktail',
     imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
-    vendorId: 'vendor_botanik',
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
   }
 ];
 
 export const INITIAL_REPORTS: ContentReport[] = [
   {
-    id: 'rep_1',
-    reporterId: 'user_senuri',
+    id: '88888888-1111-8888-8888-888888888888',
+    reporterId: 'b2222222-2222-2222-2222-222222222222',
     targetType: 'profile',
-    targetId: 'user_dinesh',
+    targetId: 'f6666666-6666-6666-6666-666666666666',
     targetTitle: 'Profile: Dinesh Wickramasinghe',
     reason: 'Unverified photo inquiry',
     details: 'User asked if the profile picture was taken recently before booking companion dinner.',
@@ -280,8 +280,8 @@ export const INITIAL_REPORTS: ContentReport[] = [
 
 export const INITIAL_PAYMENTS: VendorPayment[] = [
   {
-    id: 'pay_101',
-    vendorId: 'vendor_botanik',
+    id: '99999999-1111-9999-9999-999999999999',
+    vendorId: 'd4444444-4444-4444-4444-444444444444',
     amountLKR: 5000,
     plan: 'Monthly Vendor Pass',
     paymentGateway: 'PAYHERE',

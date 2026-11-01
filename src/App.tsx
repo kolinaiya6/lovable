@@ -15,6 +15,7 @@ import {
   VendorPayment 
 } from './types';
 import { storage } from './services/storage';
+import { generateUUID } from './utils/uuid';
 
 // Components
 import { Navbar } from './components/Navbar';
@@ -130,7 +131,7 @@ export default function App() {
     }
     // Check if match
     storage.addMatch({
-      id: `match_${Date.now()}`,
+      id: generateUUID(),
       user1Id: currentUser.id,
       user2Id: profile.id,
       createdAt: new Date().toISOString(),
@@ -165,7 +166,7 @@ export default function App() {
     // 50% probability of instant mutual match or if companion
     if (profile.isCompanion || Math.random() > 0.4) {
       storage.addMatch({
-        id: `match_${Date.now()}`,
+        id: generateUUID(),
         user1Id: currentUser.id,
         user2Id: profile.id,
         createdAt: new Date().toISOString(),
@@ -185,7 +186,7 @@ export default function App() {
     }
     storage.addPassUser(profile.id);
     storage.addMatch({
-      id: `match_${Date.now()}`,
+      id: generateUUID(),
       user1Id: currentUser.id,
       user2Id: profile.id,
       isSuperLike: true,
