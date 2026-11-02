@@ -7,6 +7,7 @@ import {
   FriendRequest, 
   ContentReport, 
   VendorPayment,
+  AppNotification,
   SriLankanCity 
 } from '../types';
 import { 
@@ -14,7 +15,8 @@ import {
   INITIAL_EVENTS, 
   INITIAL_COCKTAILS, 
   INITIAL_REPORTS, 
-  INITIAL_PAYMENTS 
+  INITIAL_PAYMENTS,
+  INITIAL_NOTIFICATIONS 
 } from '../data/mockData';
 import { supabase, FULL_SUPABASE_SQL } from './supabase';
 import { generateUUID } from '../utils/uuid';
@@ -32,6 +34,7 @@ const STORAGE_KEYS = {
   PAYMENTS: 'lovable_lk_payments',
   BLOCKED_USERS: 'lovable_lk_blocked_users',
   PASSES: 'lovable_lk_swipes_passed',
+  NOTIFICATIONS: 'lovable_lk_notifications',
 };
 
 // -------------------------------------------------------------
@@ -113,6 +116,7 @@ function dbEventToParty(row: any): PartyEvent {
     phone: row.phone || '',
     isActiveTonight: Boolean(row.is_active_tonight),
     isLiveDJ: Boolean(row.is_live_dj),
+    startsAt: row.starts_at || undefined,
   };
 }
 
@@ -135,6 +139,7 @@ function partyToDbEvent(event: PartyEvent) {
     phone: event.phone || null,
     is_active_tonight: event.isActiveTonight,
     is_live_dj: event.isLiveDJ,
+    starts_at: event.startsAt || null,
   };
 }
 
@@ -194,24 +199,101 @@ function chatToDbMessage(msg: ChatMessage) {
   };
 }
 
+function dbNotificationToApp(row: any): AppNotification {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    eventId: row.event_id || undefined,
+    type: row.type || 'event_reminder_2h',
+    title: row.title,
+    message: row.message,
+    isRead: Boolean(row.is_read),
+    scheduledFor: row.scheduled_for || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function appToDbNotification(notif: AppNotification) {
+  return {
+    id: notif.id,
+    user_id: notif.userId,
+    event_id: notif.eventId || null,
+    type: notif.type,
+    title: notif.title,
+    message: notif.message,
+    is_read: notif.isRead,
+    scheduled_for: notif.scheduledFor || null,
+    created_at: notif.createdAt || new Date().toISOString(),
+  };
+}
+
 class StorageService {
   private listeners: Set<() => void> = new Set();
   private isSupabaseSyncing = false;
+  private reminderCheckTimer: any = null;
 
   constructor() {
     this.initDefaults();
     this.initSupabaseSync();
+    this.startAutomatedReminderScanner();
   }
 
   private initDefaults() {
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
     }
-    if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
+    
+    // Auto-heal events if empty or previously cached with broken local paths
+    const storedEvents = localStorage.getItem(STORAGE_KEYS.EVENTS);
+    if (!storedEvents) {
       localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
+    } else {
+      try {
+        const parsed = JSON.parse(storedEvents);
+        const healed = parsed.map((e: PartyEvent) => {
+          if (!e.flyerUrl || e.flyerUrl.startsWith('/src/assets/')) {
+            const match = INITIAL_EVENTS.find(init => init.id === e.id);
+            return {
+              ...e,
+              flyerUrl: match?.flyerUrl || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
+              startsAt: e.startsAt || match?.startsAt,
+            };
+          }
+          return e;
+        });
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(healed));
+      } catch {
+        localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(INITIAL_EVENTS));
+      }
     }
-    if (!localStorage.getItem(STORAGE_KEYS.COCKTAILS)) {
+
+    // Auto-heal cocktails if empty or previously cached with broken local paths
+    const storedCocktails = localStorage.getItem(STORAGE_KEYS.COCKTAILS);
+    if (!storedCocktails) {
       localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(INITIAL_COCKTAILS));
+    } else {
+      try {
+        const parsed = JSON.parse(storedCocktails);
+        const healed = parsed.map((c: CocktailItem) => {
+          if (!c.imageUrl || c.imageUrl.startsWith('/src/assets/')) {
+            const match = INITIAL_COCKTAILS.find(init => init.id === c.id || init.name === c.name);
+            return {
+              ...c,
+              imageUrl: match?.imageUrl || (c.category === 'Tapas & Bites' 
+                ? 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80'
+                : 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80')
+            };
+          }
+          return c;
+        });
+        localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(healed));
+      } catch {
+        localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(INITIAL_COCKTAILS));
+      }
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
+      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(INITIAL_NOTIFICATIONS));
     }
     if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
       localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(INITIAL_REPORTS));
@@ -258,7 +340,6 @@ class StorageService {
 
   /**
    * Safe asynchronous dispatcher for Supabase mutations that guarantees non-blocking execution
-   * and clean error reporting without throwing unhandled promise rejections.
    */
   private fireSupabase(operation: () => Promise<any> | PromiseLike<any>) {
     (async () => {
@@ -275,7 +356,7 @@ class StorageService {
 
   /**
    * Initializes bidirectional Supabase live synchronization:
-   * 1. Pulls initial live rows from Supabase (profiles, events, cocktails, messages)
+   * 1. Pulls initial live rows from Supabase (profiles, events, cocktails, messages, notifications)
    * 2. Subscribes to Supabase Realtime channel for live multi-user updates
    */
   public async initSupabaseSync() {
@@ -335,7 +416,18 @@ class StorageService {
         localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(mappedMessages));
       }
 
-      // 5. Fetch live reports from Supabase
+      // 5. Fetch live notifications from Supabase
+      const { data: notifs, error: nErr } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!nErr && notifs && notifs.length > 0) {
+        const mappedNotifs = notifs.map(dbNotificationToApp);
+        localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(mappedNotifs));
+      }
+
+      // 6. Fetch live reports from Supabase
       const { data: reports, error: rErr } = await supabase
         .from('reports')
         .select('*')
@@ -356,7 +448,7 @@ class StorageService {
         localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(mappedReports));
       }
 
-      // 6. Fetch live payments from Supabase
+      // 7. Fetch live payments from Supabase
       const { data: payments, error: payErr } = await supabase
         .from('payments')
         .select('*')
@@ -377,10 +469,9 @@ class StorageService {
         localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(mappedPayments));
       }
 
-      // Notify UI listeners of freshly synchronized live database state
       this.notify();
 
-      // Listen for realtime postgres_changes on all public tables
+      // Listen for realtime changes
       try {
         supabase
           .channel('lovable_live_sync')
@@ -389,6 +480,7 @@ class StorageService {
             if (data) {
               localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(data.map(dbEventToParty)));
               this.notify();
+              this.checkAutomatedEventReminders();
             }
           })
           .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, async () => {
@@ -417,13 +509,168 @@ class StorageService {
               this.notify();
             }
           })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, async () => {
+            const { data } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
+            if (data) {
+              localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(data.map(dbNotificationToApp)));
+              this.notify();
+            }
+          })
           .subscribe();
       } catch (rtErr) {
-        console.warn('Supabase realtime listener subscription notice:', rtErr);
+        console.warn('Supabase realtime listener notice:', rtErr);
       }
     } catch (err) {
-      console.warn('Initial Supabase synchronization status:', err);
+      console.warn('Initial Supabase sync status:', err);
     }
+  }
+
+  // -------------------------------------------------------------
+  // Automated 2-Hour Pre-Event Reminder Scanner
+  // -------------------------------------------------------------
+
+  private startAutomatedReminderScanner() {
+    // Initial check immediately
+    setTimeout(() => this.checkAutomatedEventReminders(), 1500);
+
+    // Periodic scanner every 60 seconds
+    if (this.reminderCheckTimer) clearInterval(this.reminderCheckTimer);
+    this.reminderCheckTimer = setInterval(() => {
+      this.checkAutomatedEventReminders();
+    }, 60000);
+  }
+
+  /**
+   * Checks all RSVP'd events for the logged-in user.
+   * If an event begins between 0 and 125 minutes from now, automatically sends a high-priority 2-hour pre-event UI alert.
+   */
+  public checkAutomatedEventReminders() {
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) return;
+
+    const events = this.getEvents();
+    const notifications = this.getNotifications();
+    const now = Date.now();
+
+    events.forEach(event => {
+      // Is current user RSVP'd?
+      const isRsvpd = event.attendeeIds && event.attendeeIds.includes(currentUser.id);
+      if (!isRsvpd) return;
+
+      // Determine startsAt timestamp
+      let eventStartTime = event.startsAt ? new Date(event.startsAt).getTime() : NaN;
+      if (isNaN(eventStartTime) && event.isActiveTonight) {
+        // Fallback: if event is active tonight and no startsAt set, mock 95 minutes ahead for reminder demonstration
+        eventStartTime = now + 95 * 60 * 1000;
+      }
+
+      if (isNaN(eventStartTime)) return;
+
+      const diffMs = eventStartTime - now;
+      const diffMinutes = Math.floor(diffMs / (60 * 1000));
+
+      // If starts within 2 hours (0 to 125 minutes from now)
+      if (diffMinutes > 0 && diffMinutes <= 125) {
+        // Check if an unread reminder already exists
+        const alreadyNotified = notifications.some(
+          n => n.userId === currentUser.id && n.eventId === event.id && n.type === 'event_reminder_2h'
+        );
+
+        if (!alreadyNotified) {
+          const hoursLeft = Math.floor(diffMinutes / 60);
+          const minsLeft = diffMinutes % 60;
+          const timeRemainingText = hoursLeft > 0 
+            ? `${hoursLeft} hr ${minsLeft} min` 
+            : `${minsLeft} minutes`;
+
+          const newNotif: AppNotification = {
+            id: generateUUID(),
+            userId: currentUser.id,
+            eventId: event.id,
+            type: 'event_reminder_2h',
+            title: `⏰ Starting in ${timeRemainingText}!`,
+            message: `Your RSVP'd event "${event.title}" at ${event.venueName} begins soon (${event.timeStr}). Present your VIP Pass at the door.`,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          };
+
+          this.addNotification(newNotif);
+        }
+      }
+    });
+  }
+
+  /**
+   * Allows user or admin to trigger an instant 2-hour reminder for demonstration/testing
+   */
+  public triggerImmediate2HourReminder(userId: string, eventId: string) {
+    const event = this.getEvents().find(e => e.id === eventId);
+    if (!event) return;
+
+    // Ensure user is RSVP'd
+    if (!event.attendeeIds.includes(userId)) {
+      this.toggleRsvp(eventId, userId);
+    }
+
+    const newNotif: AppNotification = {
+      id: generateUUID(),
+      userId,
+      eventId: event.id,
+      type: 'event_reminder_2h',
+      title: `⏰ Event Starts in Under 2 Hours!`,
+      message: `Automated Radar Alert: "${event.title}" at ${event.venueName} begins at ${event.timeStr}. Have your VIP guest pass ready!`,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.addNotification(newNotif);
+  }
+
+  public getNotifications(): AppNotification[] {
+    try {
+      const val = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
+      return val ? JSON.parse(val) : INITIAL_NOTIFICATIONS;
+    } catch {
+      return INITIAL_NOTIFICATIONS;
+    }
+  }
+
+  public addNotification(notif: AppNotification) {
+    const list = this.getNotifications();
+    // Prepend to top
+    list.unshift(notif);
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+    this.notify();
+
+    // Async direct write to Supabase
+    this.fireSupabase(() => supabase.from('notifications').insert(appToDbNotification(notif)));
+  }
+
+  public markNotificationRead(id: string) {
+    const list = this.getNotifications().map(n => n.id === id ? { ...n, isRead: true } : n);
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+    this.notify();
+
+    this.fireSupabase(() => supabase.from('notifications').update({ is_read: true }).eq('id', id));
+  }
+
+  public markAllNotificationsRead() {
+    const list = this.getNotifications().map(n => ({ ...n, isRead: true }));
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+    this.notify();
+
+    const currentUser = this.getCurrentUser();
+    if (currentUser) {
+      this.fireSupabase(() => supabase.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id));
+    }
+  }
+
+  public clearNotification(id: string) {
+    const list = this.getNotifications().filter(n => n.id !== id);
+    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(list));
+    this.notify();
+
+    this.fireSupabase(() => supabase.from('notifications').delete().eq('id', id));
   }
 
   public subscribe(listener: () => void) {
@@ -451,6 +698,8 @@ class StorageService {
     if (user) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
       this.updateUser(user.id, user);
+      // Run reminder scan for new user
+      setTimeout(() => this.checkAutomatedEventReminders(), 500);
     } else {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     }
@@ -508,14 +757,12 @@ class StorageService {
     const list = this.getUsers().map(u => u.id === id ? { ...u, ...updates } : u);
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(list));
     
-    // Sync current user if affected
     const current = this.getCurrentUser();
     if (current && current.id === id) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify({ ...current, ...updates }));
     }
     this.notify();
 
-    // Async write to Supabase
     const targetUser = list.find(u => u.id === id);
     if (targetUser) {
       this.fireSupabase(() => supabase.from('profiles').upsert(userToDbProfile(targetUser)));
@@ -531,7 +778,6 @@ class StorageService {
     }
     this.notify();
 
-    // Async delete from Supabase
     this.fireSupabase(() => supabase.from('profiles').delete().eq('id', id));
   }
 
@@ -597,8 +843,8 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
     this.notify();
 
-    // Async direct write to Supabase events table
     this.fireSupabase(() => supabase.from('events').insert(partyToDbEvent(event)));
+    this.checkAutomatedEventReminders();
   }
 
   public updateEvent(id: string, updates: Partial<PartyEvent>) {
@@ -610,6 +856,7 @@ class StorageService {
     if (target) {
       this.fireSupabase(() => supabase.from('events').update(partyToDbEvent(target)).eq('id', id));
     }
+    this.checkAutomatedEventReminders();
   }
 
   public deleteEvent(id: string) {
@@ -617,7 +864,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
     this.notify();
 
-    // Async delete from Supabase
     this.fireSupabase(() => supabase.from('events').delete().eq('id', id));
   }
 
@@ -641,6 +887,9 @@ class StorageService {
       const atts = updatedEvent.attendeeIds;
       this.fireSupabase(() => supabase.from('events').update({ attendee_ids: atts }).eq('id', eventId));
     }
+
+    // Immediately trigger reminder check so if event is within 2 hours, user receives prompt notification
+    setTimeout(() => this.checkAutomatedEventReminders(), 300);
   }
 
   // Saved Bookmarks
@@ -698,7 +947,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(list));
     this.notify();
 
-    // Async direct write to Supabase
     this.fireSupabase(() => supabase.from('cocktails').insert(cocktailToDbItem(item)));
   }
 
@@ -718,7 +966,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.COCKTAILS, JSON.stringify(list));
     this.notify();
 
-    // Async delete from Supabase
     this.fireSupabase(() => supabase.from('cocktails').delete().eq('id', id));
   }
 
@@ -824,7 +1071,6 @@ class StorageService {
     const list = this.getFriendRequests().map(r => r.id === requestId ? { ...r, status } : r);
     localStorage.setItem(STORAGE_KEYS.FRIEND_REQUESTS, JSON.stringify(list));
     
-    // If accepted, add to matches
     const target = list.find(r => r.id === requestId);
     if (target && status === 'accepted') {
       this.addMatch({
@@ -866,7 +1112,6 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(list));
     this.notify();
 
-    // Async direct write to Supabase messages table
     this.fireSupabase(() => supabase.from('messages').insert(chatToDbMessage(newMsg)));
 
     return newMsg;
@@ -973,11 +1218,9 @@ class StorageService {
     list.unshift(payment);
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(list));
 
-    // Update vendor trial / valid pass
     this.updateUser(vendorId, { trialEndsAt: validUntil });
     this.notify();
 
-    // Async direct write to Supabase
     this.fireSupabase(() => 
       supabase
         .from('payments')

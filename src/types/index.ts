@@ -95,6 +95,19 @@ export interface PartyEvent {
   phone: string;
   isActiveTonight: boolean;
   isLiveDJ: boolean;
+  startsAt?: string; // ISO string for automated 2-hour pre-event alerts
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  eventId?: string;
+  type: 'event_reminder_2h' | 'friend_request' | 'match' | 'vip_announcement';
+  title: string;
+  message: string;
+  isRead: boolean;
+  scheduledFor?: string;
+  createdAt: string;
 }
 
 export interface CocktailItem {

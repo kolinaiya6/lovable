@@ -57,14 +57,26 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
             className="rounded-3xl bg-[#121218] border border-white/10 p-5 flex flex-col sm:flex-row gap-5 hover:border-amber-500/40 transition-all shadow-xl"
           >
             {/* Cocktail Thumbnail */}
-            <div className="relative w-full sm:w-36 h-40 rounded-2xl overflow-hidden shrink-0 bg-black">
+            <div className="relative w-full sm:w-40 h-44 rounded-2xl overflow-hidden shrink-0 bg-neutral-900 border border-white/5">
               <img
-                src={item.imageUrl}
+                src={
+                  !item.imageUrl || item.imageUrl.startsWith('/src/assets/')
+                    ? item.category === 'Tapas & Bites'
+                      ? 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80'
+                      : 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80'
+                    : item.imageUrl
+                }
                 alt={item.name}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
+                loading="lazy"
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=400&q=80';
+                  const fallback = item.category === 'Tapas & Bites'
+                    ? 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80'
+                    : 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80';
+                  if ((e.target as HTMLImageElement).src !== fallback) {
+                    (e.target as HTMLImageElement).src = fallback;
+                  }
                 }}
               />
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] text-amber-300 font-semibold border border-amber-400/20">

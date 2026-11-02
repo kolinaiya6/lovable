@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, PartyEvent } from '../types';
 import { MessageSquare, Shield, Sparkles, Store, User, LogOut, ChevronDown } from 'lucide-react';
+import { NotificationCenter } from './NotificationCenter';
 
 interface NavbarProps {
   currentUser: UserProfile | null;
   activeTab: 'discovery' | 'dating' | 'events' | 'cocktails' | 'vendor' | 'admin';
   setActiveTab: (tab: 'discovery' | 'dating' | 'events' | 'cocktails' | 'vendor' | 'admin') => void;
   unreadCount: number;
+  events?: PartyEvent[];
+  onSelectEvent?: (event: PartyEvent) => void;
   onOpenAuth: (initialMode?: 'login' | 'register') => void;
   onOpenProfile: () => void;
   onOpenSafety: () => void;
@@ -19,6 +22,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   unreadCount,
+  events = [],
+  onSelectEvent,
   onOpenAuth,
   onOpenProfile,
   onOpenSafety,
@@ -114,8 +119,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: 1 primary action */}
+        {/* Zone 3: Actions + Notification Center */}
         <div className="flex items-center gap-3 shrink-0">
+          {/* Automated 2-Hour Pre-Event Notification Radar */}
+          <NotificationCenter
+            currentUser={currentUser}
+            events={events}
+            onSelectEvent={onSelectEvent}
+            onOpenAuth={onOpenAuth}
+          />
           {currentUser ? (
             <div className="relative">
               <button

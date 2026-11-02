@@ -88,8 +88,22 @@ CREATE TABLE IF NOT EXISTS public.events (
   phone TEXT,
   is_active_tonight BOOLEAN NOT NULL DEFAULT false,
   is_live_dj BOOLEAN NOT NULL DEFAULT false,
+  starts_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '2 hours 15 minutes'),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safely ensure starts_at column exists on events if table already created
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'starts_at'
+  ) THEN
+    ALTER TABLE public.events ADD COLUMN starts_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '2 hours 15 minutes');
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- 4. SIGNATURE COCKTAILS & TAPAS (Nightclub / Bar Mixology Menus)
 CREATE TABLE IF NOT EXISTS public.cocktails (
@@ -118,7 +132,20 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 6. MUTUAL DATING MATCHES
+-- 6. AUTOMATED NOTIFICATIONS & 2-HOUR EVENT RADAR ALERTS
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  event_id UUID REFERENCES public.events(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'event_reminder_2h' CHECK (type IN ('event_reminder_2h', 'friend_request', 'match', 'vip_announcement')),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  scheduled_for TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. MUTUAL DATING MATCHES
 CREATE TABLE IF NOT EXISTS public.matches (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user1_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -128,7 +155,7 @@ CREATE TABLE IF NOT EXISTS public.matches (
   UNIQUE(user1_id, user2_id)
 );
 
--- 7. LOVE & FRIEND REQUESTS
+-- 8. LOVE & FRIEND REQUESTS
 CREATE TABLE IF NOT EXISTS public.friend_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   from_user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -138,7 +165,7 @@ CREATE TABLE IF NOT EXISTS public.friend_requests (
   UNIQUE(from_user_id, to_user_id)
 );
 
--- 8. SAVED / BOOKMARKED EVENTS
+-- 9. SAVED / BOOKMARKED EVENTS
 CREATE TABLE IF NOT EXISTS public.saved_events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -147,7 +174,7 @@ CREATE TABLE IF NOT EXISTS public.saved_events (
   UNIQUE(user_id, event_id)
 );
 
--- 9. CONTENT MODERATION REPORTS (Zero-Tolerance Safety)
+-- 10. CONTENT MODERATION REPORTS (Zero-Tolerance Safety)
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   reporter_id TEXT,
@@ -160,7 +187,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 10. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
+-- 11. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vendor_id UUID,
@@ -173,7 +200,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 11. BLOCKED USERS TABLE
+-- 12. BLOCKED USERS TABLE
 CREATE TABLE IF NOT EXISTS public.blocked_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -181,6 +208,64 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, blocked_user_id)
 );
+
+-- ==============================================================================
+-- AUTOMATED 2-HOUR PRE-EVENT REMINDER FUNCTION
+-- Checks RSVP'd events starting between NOW and NOW + 2 HOURS, generating alerts for attendees
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.generate_event_reminders()
+RETURNS INTEGER
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  r RECORD;
+  v_count INTEGER := 0;
+  v_attendee_id TEXT;
+BEGIN
+  FOR r IN 
+    SELECT e.id AS event_id, e.title, e.venue_name, e.time_str, e.attendee_ids, e.starts_at
+    FROM public.events e
+    WHERE e.starts_at IS NOT NULL
+      AND e.starts_at > NOW()
+      AND e.starts_at <= (NOW() + INTERVAL '2 hours')
+  LOOP
+    IF r.attendee_ids IS NOT NULL THEN
+      FOREACH v_attendee_id IN ARRAY r.attendee_ids LOOP
+        -- Only insert if notification has not been created yet for this event and attendee
+        IF NOT EXISTS (
+          SELECT 1 FROM public.notifications 
+          WHERE user_id = v_attendee_id::uuid 
+            AND event_id = r.event_id 
+            AND type = 'event_reminder_2h'
+        ) THEN
+          INSERT INTO public.notifications (
+            id, user_id, event_id, type, title, message, is_read, scheduled_for, created_at
+          )
+          VALUES (
+            uuid_generate_v4(),
+            v_attendee_id::uuid,
+            r.event_id,
+            'event_reminder_2h',
+            '⏰ Event Starts in Under 2 Hours!',
+            'Your RSVP for "' || r.title || '" at ' || r.venue_name || ' starts soon (' || r.time_str || '). Present your VIP Pass at the door!',
+            false,
+            r.starts_at,
+            NOW()
+          );
+          v_count := v_count + 1;
+        END IF;
+      END LOOP;
+    END IF;
+  END LOOP;
+
+  RETURN v_count;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN 0;
+END;
+$$;
 
 -- ==============================================================================
 -- PERMISSIONS & ROLES (Ensures anon and authenticated users can read/write)
@@ -200,6 +285,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cocktails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_events ENABLE ROW LEVEL SECURITY;
@@ -218,6 +304,9 @@ CREATE POLICY "Public access on cocktails" ON public.cocktails FOR ALL USING (tr
 
 DROP POLICY IF EXISTS "Public access on messages" ON public.messages;
 CREATE POLICY "Public access on messages" ON public.messages FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public access on notifications" ON public.notifications;
+CREATE POLICY "Public access on notifications" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Public access on matches" ON public.matches;
 CREATE POLICY "Public access on matches" ON public.matches FOR ALL USING (true) WITH CHECK (true);
@@ -239,7 +328,6 @@ CREATE POLICY "Public access on blocked_users" ON public.blocked_users FOR ALL U
 
 -- ==============================================================================
 -- AUTOMATIC REGISTRATION TRIGGER (auth.users -> public.profiles synchronization)
--- Whenever any user registers via Supabase Auth, their profile is created automatically!
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER 
@@ -358,12 +446,12 @@ CREATE POLICY "Anyone can upload flyers" ON storage.objects FOR ALL USING (bucke
 CREATE POLICY "Anyone can upload cocktails" ON storage.objects FOR ALL USING (bucket_id = 'cocktails') WITH CHECK (bucket_id = 'cocktails');
 
 -- ==============================================================================
--- REALTIME REPLICATION (Instant Chat, Events, Cocktails & Live Attendance)
+-- REALTIME REPLICATION (Instant Chat, Events, Cocktails, Notifications & Live Attendance)
 -- ==============================================================================
 DO $$
 DECLARE
   t text;
-  tables_to_add text[] := ARRAY['profiles', 'events', 'cocktails', 'messages', 'matches', 'friend_requests', 'saved_events', 'reports', 'payments', 'blocked_users'];
+  tables_to_add text[] := ARRAY['profiles', 'events', 'cocktails', 'messages', 'notifications', 'matches', 'friend_requests', 'saved_events', 'reports', 'payments', 'blocked_users'];
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
     CREATE PUBLICATION supabase_realtime;
@@ -384,7 +472,6 @@ END $$;
 
 -- ==============================================================================
 -- PRODUCTION LOGINS & SEED ACCOUNTS (auth.users + public.profiles)
--- Log in immediately with these verified email & password credentials!
 -- 1. Super Admin: kolinaiya6@gmail.com  | Password: Admin@123456
 -- 2. Venue Owner: botanik@rooftop.lk   | Password: Venue@123456
 -- 3. Companion:   senuri@lovable.lk    | Password: Lovable@123456
@@ -502,7 +589,7 @@ EXCEPTION
     NULL;
 END $$;
 
--- Populate public.profiles (guaranteed even if auth trigger was pending)
+-- Populate public.profiles
 INSERT INTO public.profiles (id, email, password_hash, name, age, role, is_companion, companion_headline, companion_rate, city, distance_km, bio, looking_for, interests, avatar_url, photos, is_verified, is_online)
 VALUES 
 (
@@ -631,8 +718,8 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   role = EXCLUDED.role;
 
--- 12. INITIAL PARTIES & RAVES
-INSERT INTO public.events (id, title, venue_name, city, address, category, date_str, time_str, entry_price, flyer_url, description, dj_lineup, attendee_ids, vendor_id, phone, is_active_tonight, is_live_dj)
+-- 13. INITIAL PARTIES & RAVES (With starts_at for automated 2-hour pre-event reminder tests)
+INSERT INTO public.events (id, title, venue_name, city, address, category, date_str, time_str, entry_price, flyer_url, description, dj_lineup, attendee_ids, vendor_id, phone, is_active_tonight, is_live_dj, starts_at)
 VALUES
 (
   '11111111-aaaa-1111-1111-111111111111',
@@ -651,7 +738,8 @@ VALUES
   'd4444444-4444-4444-4444-444444444444',
   '+94 77 789 2200',
   true,
-  true
+  true,
+  NOW() + INTERVAL '1 hour 45 minutes'
 ),
 (
   '22222222-bbbb-2222-2222-222222222222',
@@ -670,7 +758,8 @@ VALUES
   'd4444444-4444-4444-4444-444444444444',
   '+94 41 225 9911',
   true,
-  true
+  true,
+  NOW() + INTERVAL '26 hours'
 ),
 (
   '33333333-cccc-3333-3333-333333333333',
@@ -689,7 +778,8 @@ VALUES
   'd4444444-4444-4444-4444-444444444444',
   '+94 71 882 1199',
   false,
-  true
+  true,
+  NOW() + INTERVAL '48 hours'
 ),
 (
   '44444444-ffff-4444-4444-444444444444',
@@ -708,11 +798,14 @@ VALUES
   'd4444444-4444-4444-4444-444444444444',
   '+94 11 234 5678',
   false,
-  false
+  false,
+  NOW() + INTERVAL '72 hours'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  flyer_url = EXCLUDED.flyer_url,
+  starts_at = EXCLUDED.starts_at;
 
--- 13. INITIAL SIGNATURE COCKTAILS
+-- 14. INITIAL SIGNATURE COCKTAILS & TAPAS (High-res, guaranteed working CDN images)
 INSERT INTO public.cocktails (id, name, venue_name, city, price_lkr, description, ingredients, category, image_url, vendor_id)
 VALUES
 (
@@ -762,6 +855,28 @@ VALUES
   'Signature Cocktail',
   'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80',
   'd4444444-4444-4444-4444-444444444444'
+)
+ON CONFLICT (id) DO UPDATE SET
+  image_url = EXCLUDED.image_url,
+  price_lkr = EXCLUDED.price_lkr,
+  description = EXCLUDED.description,
+  name = EXCLUDED.name,
+  ingredients = EXCLUDED.ingredients,
+  category = EXCLUDED.category;
+
+-- 15. INITIAL 2-HOUR EVENT REMINDER ALERT
+INSERT INTO public.notifications (id, user_id, event_id, type, title, message, is_read, scheduled_for, created_at)
+VALUES
+(
+  '70000000-1111-1111-1111-111111111111',
+  'a1111111-1111-1111-1111-111111111111',
+  '11111111-aaaa-1111-1111-111111111111',
+  'event_reminder_2h',
+  '⏰ Party Starts in Under 2 Hours!',
+  'Your RSVP for "Skyline Euphoria: Lotus Vista Sessions" at Botanik Bistro & Rooftop is coming up. Dress code: Chic / Cocktail. Your VIP guest pass is active!',
+  false,
+  NOW() + INTERVAL '1 hour 45 minutes',
+  NOW()
 )
 ON CONFLICT (id) DO NOTHING;
 `;

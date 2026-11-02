@@ -1,4 +1,4 @@
-import { UserProfile, PartyEvent, CocktailItem, ContentReport, VendorPayment } from '../types';
+import { UserProfile, PartyEvent, CocktailItem, ContentReport, VendorPayment, AppNotification } from '../types';
 
 export const INITIAL_USERS: UserProfile[] = [
   {
@@ -14,8 +14,8 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Platform Administrator & Nightlife Curator for Lovable LK. Dedicated to safe, verified nightlife experiences across Sri Lanka.',
     lookingFor: 'Platform Management & Networking',
     interests: ['VIP Lounges', 'Deep House', 'Mixology', 'Travel'],
-    avatarUrl: '/src/assets/images/avatar_kavinda_1793512134574.jpg',
-    photos: ['/src/assets/images/avatar_kavinda_1793512134574.jpg'],
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'],
     isVerified: true,
     isOnline: true,
     createdAt: '2026-01-15T10:00:00Z',
@@ -35,10 +35,10 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Fashion designer by day, electronic music enthusiast by night. Love chic rooftop bars, Colombo sunset views, and deep conversation over espresso martinis. Available for curated event guest companionship.',
     lookingFor: 'High-energy party companion & VIP club buddy',
     interests: ['Techno', 'Rooftop Lounges', 'Fashion', 'Cocktails', 'Sunset Chasing'],
-    avatarUrl: '/src/assets/images/avatar_senuri_1793512133087.jpg',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
     photos: [
-      '/src/assets/images/avatar_senuri_1793512133087.jpg',
-      '/src/assets/images/hero_nightlife_colombo_1793512113884.jpg'
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80'
     ],
     isVerified: true,
     isOnline: true,
@@ -60,10 +60,10 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Surfer and nightlife enthusiast living between Mirissa and Weligama. Always know where the freshest secret beach parties are happening. Good vibes only!',
     lookingFor: 'Beach party companion, festival buddy, sunset drinks',
     interests: ['Beach Raves', 'Tropical House', 'Surfing', 'Gin & Tonics', 'Bonfires'],
-    avatarUrl: '/src/assets/images/avatar_natasha_1793512134413.jpg',
+    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
     photos: [
-      '/src/assets/images/avatar_natasha_1793512134413.jpg',
-      '/src/assets/images/event_mirissa_beach_1793512113827.jpg'
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80'
     ],
     isVerified: true,
     isOnline: true,
@@ -83,10 +83,10 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Music curator, resident DJ, and late-night culinary explorer. If you need a partner to explore underground techno spots in Colombo 07, hit me up.',
     lookingFor: 'Dance partners and late night conversation',
     interests: ['Deep House', 'Afrobeat', 'Vinyl Sessions', 'Tapas', 'Photography'],
-    avatarUrl: '/src/assets/images/avatar_arjun_1793512134166.jpg',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
     photos: [
-      '/src/assets/images/avatar_arjun_1793512134166.jpg',
-      '/src/assets/images/event_techno_rave_1793512116489.jpg'
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+      'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?auto=format&fit=crop&w=800&q=80'
     ],
     isVerified: true,
     isOnline: false,
@@ -106,8 +106,8 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Architect based in historic Galle Fort. Avid traveler, collector of Ceylon spirits, and jazz aficionado. Looking to connect with lively souls for dinners and weekend escapes.',
     lookingFor: 'Casual dating & cocktail explorer',
     interests: ['Jazz & Soul', 'Fine Dining', 'Heritage Architecture', 'Arrack Cocktails'],
-    avatarUrl: '/src/assets/images/avatar_kavinda_1793512134574.jpg',
-    photos: ['/src/assets/images/avatar_kavinda_1793512134574.jpg'],
+    avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80',
+    photos: ['https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80'],
     isVerified: false,
     isOnline: true,
     createdAt: '2026-03-12T11:45:00Z',
@@ -125,8 +125,8 @@ export const INITIAL_USERS: UserProfile[] = [
     bio: 'Iconic rooftop bar & bistro situated at the Fairway Colombo. Renowned for signature botanical mixology, international guest DJs, and breathtaking city skyline views.',
     lookingFor: 'Event Promotion & VIP Hospitality',
     interests: ['Mixology', 'Rooftops', 'Guest DJs', 'Private VIP Tables'],
-    avatarUrl: '/src/assets/images/hero_nightlife_colombo_1793512113884.jpg',
-    photos: ['/src/assets/images/hero_nightlife_colombo_1793512113884.jpg'],
+    avatarUrl: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=400&q=80',
+    photos: ['https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=400&q=80'],
     isVerified: true,
     isOnline: true,
     createdAt: '2026-01-01T00:00:00Z',
@@ -145,7 +145,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     dateStr: 'Tonight • 9:00 PM onwards',
     timeStr: '21:00 - 04:00',
     entryPrice: 'Free Entry (Guestlist)',
-    flyerUrl: '/src/assets/images/hero_nightlife_colombo_1793512113884.jpg',
+    flyerUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
     description: 'Colombo’s premier open-air rooftop session featuring ambient melodic house, bespoke cocktail pairing, and 360° panoramic views of the illuminated Colombo Lotus Tower.',
     djLineup: ['DJ Ashan (Resident)', 'Maya Sky (Berlin)', 'Suran Jay'],
     attendeeIds: ['a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
@@ -153,6 +153,8 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     phone: '+94 77 789 2200',
     isActiveTonight: true,
     isLiveDJ: true,
+    // Set to start in 1 hour 45 minutes for live demonstration of the automated 2-hour pre-event alert
+    startsAt: new Date(Date.now() + 105 * 60 * 1000).toISOString(),
   },
   {
     id: '22222222-bbbb-2222-2222-222222222222',
@@ -164,7 +166,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     dateStr: 'Saturday • 5:30 PM',
     timeStr: '17:30 - Late',
     entryPrice: 'LKR 3,000 (Incl. 1 Drink)',
-    flyerUrl: '/src/assets/images/event_mirissa_beach_1793512113827.jpg',
+    flyerUrl: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80',
     description: 'Golden hour sunset session on the pristine sands of Weligama Bay. Warm wooden lantern illumination, barefoot dancing, tropical cocktails, and international guest selectors.',
     djLineup: ['Sound of Ceylon', 'DJ Leo Mirissa', 'Elena Waves'],
     attendeeIds: ['c3333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111'],
@@ -172,6 +174,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     phone: '+94 41 225 9911',
     isActiveTonight: true,
     isLiveDJ: true,
+    startsAt: new Date(Date.now() + 26 * 3600 * 1000).toISOString(),
   },
   {
     id: '33333333-cccc-3333-3333-333333333333',
@@ -183,7 +186,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     dateStr: 'Sunday • 10:00 PM',
     timeStr: '22:00 - 05:00',
     entryPrice: 'LKR 4,000 at Gate',
-    flyerUrl: '/src/assets/images/event_techno_rave_1793512116489.jpg',
+    flyerUrl: 'https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?auto=format&fit=crop&w=800&q=80',
     description: 'Sri Lanka’s premier industrial warehouse techno experience with immersive red laser mapping, Funktion-One sound engineering, and Berlin underground vibes.',
     djLineup: ['Kavinda Live', 'Sub-Zero Colombo', 'Vortex LK'],
     attendeeIds: ['b2222222-2222-2222-2222-222222222222', 'e5555555-5555-5555-5555-555555555555'],
@@ -191,6 +194,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     phone: '+94 71 882 1199',
     isActiveTonight: false,
     isLiveDJ: true,
+    startsAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
   },
   {
     id: '44444444-ffff-4444-4444-444444444444',
@@ -202,7 +206,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     dateStr: 'Every Wednesday • 8:00 PM',
     timeStr: '20:00 - 02:00',
     entryPrice: 'Free Entry for Ladies + 2 Free Cocktails',
-    flyerUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+    flyerUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
     description: 'The mid-week party haven for chic partygoers. Complimentary prosecco glasses on entry, live saxophonist performance, and premium tapas discounts.',
     djLineup: ['DJ Dimuth K', 'Sax by Shanaka'],
     attendeeIds: ['b2222222-2222-2222-2222-222222222222', 'c3333333-3333-3333-3333-333333333333'],
@@ -210,6 +214,7 @@ export const INITIAL_EVENTS: PartyEvent[] = [
     phone: '+94 11 234 5678',
     isActiveTonight: false,
     isLiveDJ: false,
+    startsAt: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
   }
 ];
 
@@ -223,7 +228,7 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     description: 'Aged Ceylon Coconut Arrack, fresh local passionfruit nectar, hand-scraped Ceylon cinnamon infusion, egg white froth and Angostura drops.',
     ingredients: ['Ceylon Arrack 100% Coconut', 'Passionfruit Puree', 'Ceylon Cinnamon Syrup', 'Citrus', 'Egg White'],
     category: 'Signature Cocktail',
-    imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80',
     vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
@@ -235,7 +240,7 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     description: 'Olmeca Reposado tequila shaken with charred bird’s eye chili, fresh Jaffna lime, smoked agave, and sea salt rim.',
     ingredients: ['Tequila Reposado', 'Cointreau', 'Jaffna Lime', 'Smoked Kochchi Chili', 'Himalayan Salt'],
     category: 'Signature Cocktail',
-    imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80',
     vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
@@ -247,7 +252,7 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     description: 'Hand-picked Negombo crab meat folded with spiced potato and curry leaf emulsion, served with tamarind aioli.',
     ingredients: ['Fresh Lagoon Crab', 'Curry Leaf Dust', 'Panko Crumb', 'Spiced Tamarind Aioli'],
     category: 'Tapas & Bites',
-    imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80',
     vendorId: 'd4444444-4444-4444-4444-444444444444',
   },
   {
@@ -259,8 +264,21 @@ export const INITIAL_COCKTAILS: CocktailItem[] = [
     description: 'Colombo No. 7 Gin infused with organic Damask rose petal syrup, lemongrass essence, cucumber ribbons, and elderflower tonic.',
     ingredients: ['Colombo No. 7 Gin', 'Rose Cordial', 'Lemongrass', 'Fever-Tree Tonic', 'Fresh Cucumber'],
     category: 'Signature Cocktail',
-    imageUrl: '/src/assets/images/cocktails_lounge_1793512114884.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=800&q=80',
     vendorId: 'd4444444-4444-4444-4444-444444444444',
+  }
+];
+
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: '70000000-1111-1111-1111-111111111111',
+    userId: 'a1111111-1111-1111-1111-111111111111',
+    eventId: '11111111-aaaa-1111-1111-111111111111',
+    type: 'event_reminder_2h',
+    title: '⏰ Party Starts in Under 2 Hours!',
+    message: 'Your RSVP for "Skyline Euphoria: Lotus Vista Sessions" at Botanik Bistro & Rooftop is coming up. Dress code: Chic / Cocktail. Your VIP guest pass is active!',
+    isRead: false,
+    createdAt: new Date().toISOString(),
   }
 ];
 

@@ -260,6 +260,8 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         unreadCount={unreadCount}
+        events={events}
+        onSelectEvent={() => setActiveTab('events')}
         onOpenAuth={handleOpenAuth}
         onOpenProfile={() => setShowProfileEdit(true)}
         onOpenSafety={() => setShowSafetyModal(true)}
