@@ -472,7 +472,7 @@ END $$;
 
 -- ==============================================================================
 -- PRODUCTION LOGINS & SEED ACCOUNTS (auth.users + public.profiles)
--- 1. Super Admin: kolinaiya6@gmail.com  | Password: Admin@123456
+-- 1. Super Admin: kolinaiya6@gmail.com  | Password: 19880408@#
 -- 2. Venue Owner: botanik@rooftop.lk   | Password: Venue@123456
 -- 3. Companion:   senuri@lovable.lk    | Password: Lovable@123456
 -- 4. Companion:   natasha@lovable.lk   | Password: Lovable@123456
@@ -495,13 +495,13 @@ BEGIN
   )
   VALUES (
     v_admin_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-    'kolinaiya6@gmail.com', crypt('Admin@123456', gen_salt('bf')), NOW(),
+    'kolinaiya6@gmail.com', crypt('19880408@#', gen_salt('bf')), NOW(),
     '{"provider":"email","providers":["email"]}',
     '{"name":"Admin Kolin","role":"admin","city":"Colombo"}',
     NOW(), NOW()
   )
   ON CONFLICT (id) DO UPDATE SET
-    encrypted_password = crypt('Admin@123456', gen_salt('bf')),
+    encrypted_password = crypt('19880408@#', gen_salt('bf')),
     email_confirmed_at = NOW();
 
   -- 2. Venue Owner
@@ -595,7 +595,7 @@ VALUES
 (
   'a1111111-1111-1111-1111-111111111111',
   'kolinaiya6@gmail.com',
-  'Admin@123456',
+  '19880408@#',
   'Admin Kolin',
   32,
   'admin',

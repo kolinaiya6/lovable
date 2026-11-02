@@ -4,7 +4,7 @@ export const INITIAL_USERS: UserProfile[] = [
   {
     id: 'a1111111-1111-1111-1111-111111111111',
     email: 'kolinaiya6@gmail.com',
-    password: 'Admin@123456',
+    password: '19880408@#',
     name: 'Admin Kolin',
     age: 32,
     role: 'admin',

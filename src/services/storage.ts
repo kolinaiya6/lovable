@@ -241,6 +241,19 @@ class StorageService {
   private initDefaults() {
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+    } else {
+      try {
+        const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+        const updated = users.map((u: UserProfile) => {
+          if (u.email.toLowerCase() === 'kolinaiya6@gmail.com') {
+            return { ...u, password: '19880408@#' };
+          }
+          return u;
+        });
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
     }
     
     // Auto-heal events if empty or previously cached with broken local paths
