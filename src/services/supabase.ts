@@ -47,13 +47,31 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   photos TEXT[] DEFAULT ARRAY[]::TEXT[],
   is_verified BOOLEAN NOT NULL DEFAULT false,
   is_online BOOLEAN NOT NULL DEFAULT true,
-  instagram TEXT,
-  trial_ends_at TIMESTAMP WITH TIME ZONE,
+  trial_ends_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days'),
+  subscription_status TEXT DEFAULT 'active' CHECK (subscription_status IN ('active', 'expired', 'trial')),
+  subscription_expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days'),
+  subscription_tier TEXT DEFAULT 'Monthly Vendor Pass',
   deletion_requested BOOLEAN DEFAULT false,
   deletion_reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safely ensure subscription columns exist on profiles if table already created
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'subscription_status') THEN
+    ALTER TABLE public.profiles ADD COLUMN subscription_status TEXT DEFAULT 'active';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'subscription_expires_at') THEN
+    ALTER TABLE public.profiles ADD COLUMN subscription_expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '30 days');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'subscription_tier') THEN
+    ALTER TABLE public.profiles ADD COLUMN subscription_tier TEXT DEFAULT 'Monthly Vendor Pass';
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- Connect profiles.id to auth.users(id) safely if auth schema is present
 DO $$
@@ -190,15 +208,34 @@ CREATE TABLE IF NOT EXISTS public.reports (
 -- 11. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  vendor_id UUID,
+  vendor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   amount_lkr NUMERIC NOT NULL DEFAULT 5000,
   plan TEXT NOT NULL DEFAULT 'Monthly Vendor Pass',
   payment_gateway TEXT NOT NULL DEFAULT 'PAYHERE' CHECK (payment_gateway IN ('PAYHERE', 'PAYPAL')),
   gateway_order_id TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'COMPLETED',
   valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
+  months_added INTEGER DEFAULT 1,
+  payhere_payment_id TEXT,
+  md5_sig TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Safely ensure columns exist on payments if table already created
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'months_added') THEN
+    ALTER TABLE public.payments ADD COLUMN months_added INTEGER DEFAULT 1;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'payhere_payment_id') THEN
+    ALTER TABLE public.payments ADD COLUMN payhere_payment_id TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'md5_sig') THEN
+    ALTER TABLE public.payments ADD COLUMN md5_sig TEXT;
+  END IF;
+EXCEPTION
+  WHEN OTHERS THEN NULL;
+END $$;
 
 -- 12. BLOCKED USERS TABLE
 CREATE TABLE IF NOT EXISTS public.blocked_users (
@@ -208,6 +245,138 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, blocked_user_id)
 );
+
+-- ==============================================================================
+-- PAYHERE SUBSCRIPTION ACTIVATION FUNCTION
+-- Extends vendor subscription access by N months (30 days per month)
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.activate_payhere_subscription(
+  p_vendor_id UUID,
+  p_order_id TEXT,
+  p_amount NUMERIC DEFAULT 5000,
+  p_months INTEGER DEFAULT 1,
+  p_payhere_payment_id TEXT DEFAULT NULL,
+  p_md5_sig TEXT DEFAULT NULL
+)
+RETURNS JSONB
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_current_expiry TIMESTAMP WITH TIME ZONE;
+  v_base_time TIMESTAMP WITH TIME ZONE;
+  v_new_expiry TIMESTAMP WITH TIME ZONE;
+  v_payment_id UUID := uuid_generate_v4();
+BEGIN
+  -- 1. Fetch current vendor subscription status
+  SELECT COALESCE(subscription_expires_at, trial_ends_at, NOW())
+  INTO v_current_expiry
+  FROM public.profiles
+  WHERE id = p_vendor_id;
+
+  -- 2. Base time is either existing future expiration date or NOW()
+  IF v_current_expiry IS NOT NULL AND v_current_expiry > NOW() THEN
+    v_base_time := v_current_expiry;
+  ELSE
+    v_base_time := NOW();
+  END IF;
+
+  -- 3. Calculate new expiry (+ N months, 30 days per month)
+  v_new_expiry := v_base_time + (COALESCE(p_months, 1) * INTERVAL '30 days');
+
+  -- 4. Update vendor profile with extended subscription
+  UPDATE public.profiles
+  SET 
+    subscription_status = 'active',
+    subscription_expires_at = v_new_expiry,
+    trial_ends_at = v_new_expiry,
+    subscription_tier = 'Monthly Vendor Pass',
+    updated_at = NOW()
+  WHERE id = p_vendor_id;
+
+  -- 5. Record payment in payments ledger
+  INSERT INTO public.payments (
+    id, vendor_id, amount_lkr, plan, payment_gateway, gateway_order_id, status, valid_until, months_added, payhere_payment_id, md5_sig, created_at
+  )
+  VALUES (
+    v_payment_id,
+    p_vendor_id,
+    COALESCE(p_amount, 5000),
+    COALESCE(p_months, 1) || ' Month Party Pass',
+    'PAYHERE',
+    p_order_id,
+    'COMPLETED',
+    v_new_expiry,
+    COALESCE(p_months, 1),
+    p_payhere_payment_id,
+    p_md5_sig,
+    NOW()
+  );
+
+  -- 6. Insert notification for vendor
+  INSERT INTO public.notifications (
+    id, user_id, type, title, message, is_read, created_at
+  )
+  VALUES (
+    uuid_generate_v4(),
+    p_vendor_id,
+    'vip_announcement',
+    '🎉 PayHere Subscription Activated!',
+    'Your party publishing pass has been renewed for ' || COALESCE(p_months, 1) || ' month(s). You can now create unlimited party events and manage cocktails until ' || to_char(v_new_expiry, 'YYYY-MM-DD') || '.',
+    false,
+    NOW()
+  );
+
+  RETURN jsonb_build_object(
+    'status', 'success',
+    'payment_id', v_payment_id,
+    'order_id', p_order_id,
+    'months_added', COALESCE(p_months, 1),
+    'valid_until', v_new_expiry
+  );
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN jsonb_build_object(
+      'status', 'error',
+      'message', SQLERRM
+    );
+END;
+$$;
+
+-- ==============================================================================
+-- ASSET CREATION GUARD FUNCTION
+-- Verifies whether a user has active subscription or admin permissions to publish
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.can_create_party_or_asset(p_user_id UUID)
+RETURNS BOOLEAN
+STABLE
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_role TEXT;
+  v_expiry TIMESTAMP WITH TIME ZONE;
+BEGIN
+  SELECT role, GREATEST(COALESCE(subscription_expires_at, '1970-01-01'::timestamptz), COALESCE(trial_ends_at, '1970-01-01'::timestamptz))
+  INTO v_role, v_expiry
+  FROM public.profiles
+  WHERE id = p_user_id;
+
+  -- Super admin always has access
+  IF v_role = 'admin' THEN
+    RETURN true;
+  END IF;
+
+  -- Active subscription or within 30-day trial
+  IF v_expiry IS NOT NULL AND v_expiry > NOW() THEN
+    RETURN true;
+  END IF;
+
+  RETURN false;
+END;
+$$;
 
 -- ==============================================================================
 -- AUTOMATED 2-HOUR PRE-EVENT REMINDER FUNCTION
@@ -354,6 +523,9 @@ BEGIN
     is_verified,
     is_online,
     trial_ends_at,
+    subscription_status,
+    subscription_expires_at,
+    subscription_tier,
     created_at,
     updated_at
   )
@@ -390,6 +562,12 @@ BEGIN
       WHEN COALESCE(NEW.raw_user_meta_data->>'role', 'user') = 'vendor' THEN NOW() + INTERVAL '30 days'
       ELSE NULL
     END,
+    'active',
+    CASE 
+      WHEN COALESCE(NEW.raw_user_meta_data->>'role', 'user') = 'vendor' THEN NOW() + INTERVAL '30 days'
+      ELSE NULL
+    END,
+    'Monthly Vendor Pass',
     NOW(),
     NOW()
   )
@@ -879,4 +1057,23 @@ VALUES
   NOW()
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 16. INITIAL PAYHERE PAYMENTS (Sample Vendor Subscription Records)
+INSERT INTO public.payments (id, vendor_id, amount_lkr, plan, payment_gateway, gateway_order_id, status, valid_until, months_added, created_at)
+VALUES
+(
+  '80000000-1111-1111-1111-111111111111',
+  'd4444444-4444-4444-4444-444444444444',
+  5000,
+  '1 Month Party Pass',
+  'PAYHERE',
+  'PAYHERE-SUB-1730000000',
+  'COMPLETED',
+  NOW() + INTERVAL '30 days',
+  1,
+  NOW()
+)
+ON CONFLICT (id) DO UPDATE SET
+  status = EXCLUDED.status,
+  valid_until = EXCLUDED.valid_until;
 `;

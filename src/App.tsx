@@ -390,7 +390,7 @@ export default function App() {
               onDeleteEvent={(id) => storage.deleteEvent(id)}
               onAddCocktail={(c) => storage.addCocktail(c)}
               onDeleteCocktail={(id) => storage.deleteCocktail(id)}
-              onPayVendorPass={(orderId, gateway) => storage.recordVendorPayment(currentUser.id, orderId, gateway)}
+              onPayVendorPass={(orderId, gateway, months, amount) => storage.recordVendorPayment(currentUser.id, orderId, gateway, months, amount)}
               onSwitchToVendorRole={() => storage.updateUser(currentUser.id, { role: 'vendor' })}
             />
           ) : (

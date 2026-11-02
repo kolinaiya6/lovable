@@ -73,6 +73,9 @@ export interface UserProfile {
   instagram?: string;
   createdAt: string;
   trialEndsAt?: string; // for vendors (30-day free trial)
+  subscriptionStatus?: 'active' | 'expired' | 'trial';
+  subscriptionExpiresAt?: string; // ISO timestamp
+  subscriptionTier?: string; // e.g. "Monthly Vendor Pass"
   deletionRequested?: boolean;
   deletionReason?: string;
 }
@@ -166,10 +169,12 @@ export interface VendorPayment {
   id: string;
   vendorId: string;
   amountLKR: number;
-  plan: 'Monthly Vendor Pass';
+  plan: string;
   paymentGateway: 'PAYHERE' | 'PAYPAL';
   gatewayOrderId: string;
-  status: 'COMPLETED' | 'PENDING';
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
   createdAt: string;
   validUntil: string;
+  monthsAdded?: number;
 }
+

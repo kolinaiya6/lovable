@@ -64,6 +64,9 @@ function dbProfileToUser(row: any): UserProfile {
     instagram: row.instagram || undefined,
     createdAt: row.created_at || new Date().toISOString(),
     trialEndsAt: row.trial_ends_at || undefined,
+    subscriptionStatus: row.subscription_status || (row.trial_ends_at && new Date(row.trial_ends_at).getTime() > Date.now() ? 'active' : 'expired'),
+    subscriptionExpiresAt: row.subscription_expires_at || row.trial_ends_at || undefined,
+    subscriptionTier: row.subscription_tier || 'Monthly Vendor Pass',
     deletionRequested: Boolean(row.deletion_requested),
     deletionReason: row.deletion_reason || undefined,
   };
@@ -91,6 +94,9 @@ function userToDbProfile(user: UserProfile) {
     is_online: user.isOnline,
     instagram: user.instagram || null,
     trial_ends_at: user.trialEndsAt || null,
+    subscription_status: user.subscriptionStatus || (user.trialEndsAt && new Date(user.trialEndsAt).getTime() > Date.now() ? 'active' : 'expired'),
+    subscription_expires_at: user.subscriptionExpiresAt || user.trialEndsAt || null,
+    subscription_tier: user.subscriptionTier || 'Monthly Vendor Pass',
     deletion_requested: user.deletionRequested || false,
     deletion_reason: user.deletionReason || null,
     updated_at: new Date().toISOString(),
@@ -1213,25 +1219,71 @@ class StorageService {
   public recordVendorPayment(
     vendorId: string, 
     gatewayOrderId: string, 
-    paymentGateway: 'PAYHERE' | 'PAYPAL' = 'PAYHERE'
+    paymentGateway: 'PAYHERE' | 'PAYPAL' = 'PAYHERE',
+    monthsCount: number = 1,
+    amountLKR: number = 5000
   ) {
     const list = this.getPayments();
-    const validUntil = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+    const user = this.getUsers().find(u => u.id === vendorId);
+    
+    // Calculate new expiration date: extend on top of existing remaining time or now
+    let baseTime = Date.now();
+    const currentExpiry = user?.subscriptionExpiresAt || user?.trialEndsAt;
+    if (currentExpiry) {
+      const existingEnd = new Date(currentExpiry).getTime();
+      if (!isNaN(existingEnd) && existingEnd > baseTime) {
+        baseTime = existingEnd;
+      }
+    }
+
+    const daysToAdd = monthsCount * 30;
+    const validUntil = new Date(baseTime + daysToAdd * 24 * 3600 * 1000).toISOString();
+
     const payment: VendorPayment = {
       id: generateUUID(),
       vendorId,
-      amountLKR: 5000,
-      plan: 'Monthly Vendor Pass',
+      amountLKR,
+      plan: `${monthsCount} Month Party Pass`,
       paymentGateway,
       gatewayOrderId,
       status: 'COMPLETED',
       createdAt: new Date().toISOString(),
       validUntil,
+      monthsAdded: monthsCount,
     };
     list.unshift(payment);
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(list));
 
-    this.updateUser(vendorId, { trialEndsAt: validUntil });
+    const userUpdates = {
+      trialEndsAt: validUntil,
+      subscriptionExpiresAt: validUntil,
+      subscriptionStatus: 'active' as const,
+      subscriptionTier: 'Monthly Vendor Pass'
+    };
+    this.updateUser(vendorId, userUpdates);
+
+    // Update active session user if matches
+    const current = this.getCurrentUser();
+    if (current && current.id === vendorId) {
+      this.setCurrentUser({ ...current, ...userUpdates });
+    }
+
+    // Insert alert in Notification Center
+    const expiryFormatted = new Date(validUntil).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    this.addNotification({
+      id: generateUUID(),
+      userId: vendorId,
+      type: 'vip_announcement',
+      title: '🎉 PayHere Subscription Activated!',
+      message: `Your party publishing pass has been renewed for ${monthsCount} month(s) (valid until ${expiryFormatted}). You can now create unlimited party events, raves & cocktails.`,
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
     this.notify();
 
     this.fireSupabase(() => 
@@ -1248,6 +1300,18 @@ class StorageService {
           valid_until: payment.validUntil,
           created_at: payment.createdAt,
         })
+    );
+
+    this.fireSupabase(() =>
+      supabase
+        .from('profiles')
+        .update({
+          trial_ends_at: validUntil,
+          subscription_expires_at: validUntil,
+          subscription_status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', vendorId)
     );
   }
 

@@ -30,7 +30,7 @@ interface VendorPortalProps {
   onDeleteEvent: (id: string) => void;
   onAddCocktail: (cocktail: CocktailItem) => void;
   onDeleteCocktail: (id: string) => void;
-  onPayVendorPass: (gatewayOrderId: string, gateway: 'PAYHERE' | 'PAYPAL') => void;
+  onPayVendorPass: (gatewayOrderId: string, gateway: 'PAYHERE' | 'PAYPAL', monthsCount?: number, amountLKR?: number) => void;
   onSwitchToVendorRole: () => void;
 }
 
@@ -82,9 +82,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
     imageUrl: '',
   });
 
-  // Calculate 30-day trial status
-  const trialEnds = currentUser.trialEndsAt ? new Date(currentUser.trialEndsAt) : new Date(Date.now() + 28 * 24 * 3600 * 1000);
+  // Calculate subscription status & access
+  const currentExpiryStr = currentUser.subscriptionExpiresAt || currentUser.trialEndsAt;
+  const trialEnds = currentExpiryStr ? new Date(currentExpiryStr) : new Date(Date.now() + 28 * 24 * 3600 * 1000);
   const diffDays = Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  const isSubscriptionActive = currentUser.role === 'admin' || diffDays > 0;
 
   const vendorEvents = events.filter(e => e.vendorId === currentUser.id || currentUser.role === 'admin' || e.vendorId === 'vendor_botanik');
   const vendorCocktails = cocktails.filter(c => c.vendorId === currentUser.id || currentUser.role === 'admin' || c.vendorId === 'vendor_botanik');
@@ -119,6 +121,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
     e.preventDefault();
     if (!newEvent.title.trim()) return;
 
+    if (!isSubscriptionActive) {
+      setShowEventModal(false);
+      setShowPaymentModal(true);
+      return;
+    }
+
     const finalFlyer = newEvent.flyerUrl.trim() || 
       'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80';
 
@@ -149,6 +157,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
   const handleCreateCocktail = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCocktail.name.trim()) return;
+
+    if (!isSubscriptionActive) {
+      setShowCocktailModal(false);
+      setShowPaymentModal(true);
+      return;
+    }
 
     const finalImage = newCocktail.imageUrl.trim() ||
       'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80';
@@ -269,21 +283,21 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
           </p>
         </div>
 
-        {/* 30-Day Free Trial Pill & PayHere CTA */}
+        {/* 30-Day Free Trial / Subscription Pill & PayHere CTA */}
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
             <div className="text-right">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Vendor Trial Pass</p>
-              <p className="text-xs font-bold text-emerald-400 font-mono">
-                {diffDays} Days Remaining
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Party Publishing Pass</p>
+              <p className={`text-xs font-bold font-mono ${isSubscriptionActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isSubscriptionActive ? `${diffDays} Days Active` : 'Pass Expired'}
               </p>
             </div>
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all hover:scale-105"
+              className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all hover:scale-105 cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>Renew Pass (PayHere / PayPal)</span>
+              <span>{isSubscriptionActive ? '+ Add Month (PayHere)' : 'Renew Pass (PayHere)'}</span>
             </button>
           </div>
         </div>
@@ -329,24 +343,24 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       </div>
 
       {/* Trial Expired Alert Banner */}
-      {diffDays === 0 && (
+      {!isSubscriptionActive && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white">30-Day Free Trial Concluded</p>
+              <p className="text-xs font-bold text-white">Party Publishing Pass Concluded</p>
               <p className="text-[11px] text-slate-400">
-                Activate your PayHere Monthly Vendor Pass (LKR 5,000 / month) to keep your club guestlists and drink specials online.
+                Your 1-month trial has expired. Subscribe with PayHere (LKR 5,000 / month) to add another month of adding parties, techno raves, and drink specials.
               </p>
             </div>
           </div>
           <button
-            onClick={() => setActiveTab('subscription')}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold whitespace-nowrap shadow-md shadow-[#E63946]/20 hover:scale-105 transition-all"
+            onClick={() => setShowPaymentModal(true)}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold whitespace-nowrap shadow-md shadow-[#E63946]/20 hover:scale-105 transition-all cursor-pointer"
           >
-            Activate via PayHere
+            Add Month via PayHere
           </button>
         </div>
       )}
@@ -354,11 +368,39 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       {/* TAB 1: EVENTS MANAGEMENT */}
       {activeTab === 'events' && (
         <div className="space-y-6">
+          {!isSubscriptionActive && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Party Publishing Locked</h4>
+                  <p className="text-[11px] text-slate-300">
+                    Pay via PayHere to add 1 month (or more) of adding rave parties and guestlists.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold shadow-md cursor-pointer whitespace-nowrap"
+              >
+                Unlock with PayHere
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-white text-base">Published Parties & Guestlists</h3>
             <button
-              onClick={() => setShowEventModal(true)}
-              className="py-2 px-4 rounded-xl bg-[#E63946] hover:bg-[#D90429] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#E63946]/20"
+              onClick={() => {
+                if (!isSubscriptionActive) {
+                  setShowPaymentModal(true);
+                  return;
+                }
+                setShowEventModal(true);
+              }}
+              className="py-2 px-4 rounded-xl bg-[#E63946] hover:bg-[#D90429] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#E63946]/20 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Add New Party Event</span>
@@ -411,11 +453,39 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       {/* TAB 2: COCKTAIL MENU MANAGEMENT */}
       {activeTab === 'menu' && (
         <div className="space-y-6">
+          {!isSubscriptionActive && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Menu Showcases Locked</h4>
+                  <p className="text-[11px] text-slate-300">
+                    Active PayHere subscription required to curate signature mixology & tapas.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold shadow-md cursor-pointer whitespace-nowrap"
+              >
+                Unlock with PayHere
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-white text-base">Signature Mixology & Tapas</h3>
             <button
-              onClick={() => setShowCocktailModal(true)}
-              className="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold flex items-center gap-1.5 shadow-md"
+              onClick={() => {
+                if (!isSubscriptionActive) {
+                  setShowPaymentModal(true);
+                  return;
+                }
+                setShowCocktailModal(true);
+              }}
+              className="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Add Drink / Dish</span>
@@ -460,8 +530,8 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
           vendorId={currentUser.id}
           vendorName={currentUser.name}
           vendorEmail={currentUser.email}
-          onPaymentComplete={(orderId, gateway) => {
-            onPayVendorPass(orderId, gateway);
+          onPaymentComplete={(orderId, gateway, months, amount) => {
+            onPayVendorPass(orderId, gateway, months, amount);
           }}
         />
       )}
@@ -875,8 +945,8 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               vendorId={currentUser.id}
               vendorName={currentUser.name}
               vendorEmail={currentUser.email}
-              onPaymentComplete={(orderId, gateway) => {
-                onPayVendorPass(orderId, gateway);
+              onPaymentComplete={(orderId, gateway, months, amount) => {
+                onPayVendorPass(orderId, gateway, months, amount);
                 setTimeout(() => setShowPaymentModal(false), 2000);
               }}
             />

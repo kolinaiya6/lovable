@@ -307,5 +307,6 @@ export const INITIAL_PAYMENTS: VendorPayment[] = [
     status: 'COMPLETED',
     createdAt: '2026-03-01T12:00:00Z',
     validUntil: '2026-11-28T00:00:00Z',
+    monthsAdded: 1,
   }
 ];
