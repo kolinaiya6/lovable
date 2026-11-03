@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CreditCard, CheckCircle2, ShieldCheck, Sparkles, RefreshCw, AlertTriangle, Settings, Copy, Check, ExternalLink } from 'lucide-react';
+import { CreditCard, CheckCircle2, ShieldCheck, Sparkles, RefreshCw, AlertTriangle, Settings, Copy, Check, ExternalLink, Lock, X, Globe } from 'lucide-react';
 import CryptoJS from 'crypto-js';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -11,9 +11,11 @@ interface PayHereSubscriptionProps {
   monthlyAmountLKR?: number;
 }
 
-// User PayHere App Credentials
+// User PayHere App Credentials & Pay Button ID
 const PAYHERE_APP_ID = '4OVzEvzVxEe4JH5Y5Efhlp3D5';
 const PAYHERE_APP_SECRET = '8MQpgjOPilu4pBwoO7aCgt4ZBYJshChIA8LV4Ehs6OQt';
+const PAYHERE_BUTTON_PAY_ID = 'o92898f1a';
+const PAYHERE_SANDBOX_CHECKOUT_URL = `https://sandbox.payhere.lk/pay/${PAYHERE_BUTTON_PAY_ID}`;
 
 export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   vendorId,
@@ -30,6 +32,7 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   const [manualOrderId, setManualOrderId] = useState('');
   const [copiedDomain, setCopiedDomain] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [showPopupBrowserModal, setShowPopupBrowserModal] = useState(false);
 
   // Merchant Credentials (defaults to user PayHere App ID and Secret)
   const [merchantId, setMerchantId] = useState(PAYHERE_APP_ID);
@@ -110,6 +113,7 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
 
   const handlePaymentSuccess = (confirmedOrderId: string) => {
     setIsProcessing(false);
+    setShowPopupBrowserModal(false);
     setOrderId(confirmedOrderId);
     setPaymentSuccess(true);
     // 1 Month only = 30 days
@@ -117,71 +121,30 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   };
 
   /**
-   * Launch official PayHere JS SDK Popup with verified MD5 checksum
+   * Launch official PayHere Payment in Popup Browser Modal
    */
   const handleStartPayHerePayment = () => {
     setIsProcessing(true);
-    const generatedOrderId = `PAYHERE-ORD-${Date.now()}`;
-
-    const win = window as any;
-    if (typeof win.payhere !== 'undefined' && typeof win.payhere.startPayment === 'function') {
-      const hash = generatePayHereHash(
-        merchantId,
-        generatedOrderId,
-        monthlyAmountLKR,
-        'LKR',
-        merchantSecret
-      );
-
-      const paymentObj = {
-        sandbox: true,
-        merchant_id: merchantId,
-        return_url: window.location.href,
-        cancel_url: window.location.href,
-        notify_url: `${window.location.origin}/api/payhere-notify`,
-        order_id: generatedOrderId,
-        items: 'Lovable LK - 1 Month Party Publisher Pass',
-        amount: monthlyAmountLKR.toFixed(2),
-        currency: 'LKR',
-        hash: hash,
-        first_name: vendorName.split(' ')[0] || 'Venue',
-        last_name: vendorName.split(' ')[1] || 'Partner',
-        email: vendorEmail || 'organizer@nightlife.lk',
-        phone: '+94 77 123 4567',
-        address: 'Hospital Street, Colombo 01',
-        city: 'Colombo',
-        country: 'Sri Lanka',
-        custom_1: vendorId,
-        custom_2: '1 MONTH',
-      };
-
-      win.payhere.onCompleted = function (orderId: string) {
-        handlePaymentSuccess(orderId || generatedOrderId);
-      };
-
-      win.payhere.onDismissed = function () {
-        setIsProcessing(false);
-      };
-
-      win.payhere.onError = function (err: any) {
-        console.warn('PayHere gateway reported error:', err);
-        setIsProcessing(false);
-      };
-
-      try {
-        win.payhere.startPayment(paymentObj);
-        return;
-      } catch (err) {
-        console.warn('PayHere startPayment error:', err);
-        setIsProcessing(false);
+    // Open the official browser popup modal directly targeted to button o92898f1a
+    setShowPopupBrowserModal(true);
+    
+    // Also try opening in a popup browser window
+    try {
+      if (typeof window !== 'undefined') {
+        const popup = window.open(
+          PAYHERE_SANDBOX_CHECKOUT_URL,
+          'PayHereCheckoutModal',
+          'width=600,height=750,left=200,top=100,scrollbars=yes,status=no'
+        );
+        if (popup) {
+          popup.focus();
+        }
       }
+    } catch (e) {
+      console.warn('Popup blocker active, rendering in modal iframe:', e);
     }
 
-    // If SDK is not loaded, fallback to submitting the standard HTML PayHere Form
-    if (formRef.current) {
-      formRef.current.submit();
-      setIsProcessing(false);
-    }
+    setIsProcessing(false);
   };
 
   const handleCopyDomain = () => {
@@ -452,6 +415,82 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
                 {t.activateOneMonth}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* PAYHERE OFFICIAL BROWSER POPUP MODAL */}
+      {showPopupBrowserModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl bg-[#14141E] border border-white/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Browser Header Bar */}
+            <div className="bg-[#1C1C28] px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+                <span className="text-xs font-semibold text-slate-300 ml-2 hidden sm:flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-[#FF758F]" />
+                  <span>PayHere Checkout</span>
+                </span>
+              </div>
+
+              {/* URL Address Bar */}
+              <div className="flex-1 max-w-md mx-2 px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-[11px] font-mono text-slate-300 flex items-center gap-1.5 truncate">
+                <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span className="text-slate-400">https://sandbox.payhere.lk/pay/</span>
+                <span className="text-emerald-300 font-bold">{PAYHERE_BUTTON_PAY_ID}</span>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => window.open(PAYHERE_SANDBOX_CHECKOUT_URL, '_blank')}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Open in new window"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPopupBrowserModal(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close Modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Live PayHere Checkout iFrame */}
+            <div className="flex-1 min-h-[460px] bg-white relative">
+              <iframe
+                src={PAYHERE_SANDBOX_CHECKOUT_URL}
+                title="PayHere Official Checkout"
+                className="w-full h-[480px] border-none"
+              />
+            </div>
+
+            {/* Completion Toolbar */}
+            <div className="p-4 bg-[#14141E] border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-slate-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  {language === 'si'
+                    ? 'ගෙවීම අවසන් කළ පසු පහත බොත්තම ඔබා මාස 1ක අවසරය ලබාගන්න.'
+                    : 'Done paying on PayHere? Click below to activate your 1-Month pass.'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handlePaymentSuccess(`PAYHERE-CONF-${Date.now()}`)}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>{language === 'si' ? 'ගෙවීම තහවුරු කර මාස 1ක් සක්‍රීය කරන්න' : 'I Paid • Activate 1 Month Pass'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
