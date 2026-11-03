@@ -36,6 +36,7 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   const [merchantSecret, setMerchantSecret] = useState(PAYHERE_APP_SECRET);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
   /**
@@ -59,20 +60,24 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   );
 
   useEffect(() => {
-    // 1. Ensure PayHere Button JS is loaded
+    // 1. Ensure PayHere Button JS is loaded fresh next to the embed container
     const scriptId = 'payhere-button';
-    let script = document.getElementById(scriptId) as HTMLScriptElement;
+    const oldScript = document.getElementById(scriptId);
+    if (oldScript) {
+      oldScript.remove();
+    }
 
-    if (!script) {
-      script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://sandbox.payhere.lk/payhere.pay.button.js';
-      script.async = true;
-      script.onload = () => setScriptLoaded(true);
-      script.onerror = () => setScriptLoaded(true);
-      document.body.appendChild(script);
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://sandbox.payhere.lk/payhere.pay.button.js';
+    script.async = true;
+    script.onload = () => setScriptLoaded(true);
+    script.onerror = () => setScriptLoaded(true);
+
+    if (containerRef.current) {
+      containerRef.current.appendChild(script);
     } else {
-      setScriptLoaded(true);
+      document.body.appendChild(script);
     }
 
     // 2. Wire up PayHere Event Listeners
@@ -96,6 +101,11 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
         setIsProcessing(false);
       };
     }
+
+    return () => {
+      const s = document.getElementById(scriptId);
+      if (s) s.remove();
+    };
   }, [currentOrderId]);
 
   const handlePaymentSuccess = (confirmedOrderId: string) => {
@@ -355,7 +365,7 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
             </div>
 
             {/* Official PayHere Embed Form Container requested by user */}
-            <div className="py-2 flex items-center justify-center min-h-[44px]">
+            <div ref={containerRef} className="py-2 flex flex-col items-center justify-center min-h-[48px]">
               <div 
                 id="payhere-form" 
                 data-pay-id="o92898f1a" 
