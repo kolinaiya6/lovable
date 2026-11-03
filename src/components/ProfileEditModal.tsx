@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { UserProfile, SriLankanCity, ALL_SRI_LANKAN_CITIES } from '../types';
-import { X, Sparkles, MapPin, Check, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Check, Upload } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface ProfileEditModalProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   currentUser,
   onSave,
 }) => {
+  const { language } = useLanguage();
   const [name, setName] = useState(currentUser.name);
   const [age, setAge] = useState(currentUser.age);
   const [city, setCity] = useState<SriLankanCity>(currentUser.city);
@@ -74,26 +77,30 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h3 className="font-extrabold text-xl text-white mb-1">Edit Nightlife Profile</h3>
+        <h3 className="font-extrabold text-xl text-white mb-1">
+          {language === 'si' ? 'නයිට්ලයිෆ් පැතිකඩ සංස්කරණය' : 'Edit Nightlife Profile'}
+        </h3>
         <p className="text-xs text-slate-400 mb-6">
-          Keep your dating and party companion profile fresh and captivating
+          {language === 'si' ? 'ඔබගේ ඩේටිං සහ පාටි සහකරු පැතිකඩ අලුත් කරගන්න' : 'Keep your dating and party companion profile fresh and captivating'}
         </p>
 
         {savedSuccess ? (
           <div className="p-4 rounded-2xl bg-emerald-500/20 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
             <Check className="w-4 h-4" />
-            <span>Profile updated successfully!</span>
+            <span>{language === 'si' ? 'පැතිකඩ සාර්ථකව යාවත්කාලීන විය!' : 'Profile updated successfully!'}</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Name</label>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  {language === 'si' ? 'නම' : 'Name'}
+                </label>
                 <input
                   type="text"
                   required
@@ -104,7 +111,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Age</label>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  {language === 'si' ? 'වයස' : 'Age'}
+                </label>
                 <input
                   type="number"
                   min="18"
@@ -118,7 +127,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">City / Region</label>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  {language === 'si' ? 'නගරය' : 'City / Region'}
+                </label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value as SriLankanCity)}
@@ -126,14 +137,16 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 >
                   {ALL_SRI_LANKAN_CITIES.map((c) => (
                     <option key={c} value={c} className="bg-[#1C1C26] text-white">
-                      {c}
+                      {SINHALA_CITIES[c] || c}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Looking For</label>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  {language === 'si' ? 'අපේක්ෂාව' : 'Looking For'}
+                </label>
                 <input
                   type="text"
                   value={lookingFor}
@@ -146,7 +159,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 
             {/* Profile Photo Upload & Preview */}
             <div>
-              <label className="block text-slate-300 font-semibold mb-2">Profile Photo</label>
+              <label className="block text-slate-300 font-semibold mb-2">
+                {language === 'si' ? 'පැතිකඩ ඡායාරූපය' : 'Profile Photo'}
+              </label>
               <div className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10">
                 <img
                   src={avatarUrl}
@@ -156,7 +171,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <div className="flex-1 space-y-2">
                   <label className="cursor-pointer py-1.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all w-fit border border-white/20">
                     <Upload className="w-3.5 h-3.5 text-[#FF758F]" />
-                    <span>Upload New Photo</span>
+                    <span>{language === 'si' ? 'නව ඡායාරූපයක් එක් කරන්න' : 'Upload New Photo'}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -166,7 +181,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   </label>
                   <input
                     type="url"
-                    placeholder="Or enter image URL..."
+                    placeholder={language === 'si' ? 'හෝ ඡායාරූප Image URL එක...' : 'Or enter image URL...'}
                     value={avatarUrl.startsWith('data:') ? '' : avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-white placeholder-slate-500 text-[11px]"
@@ -176,7 +191,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Bio</label>
+              <label className="block text-slate-300 font-semibold mb-1">
+                {language === 'si' ? 'ස්වයං විස්තරය' : 'Bio'}
+              </label>
               <textarea
                 rows={3}
                 value={bio}
@@ -186,7 +203,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-slate-300 font-semibold mb-1">Interests (comma separated)</label>
+              <label className="block text-slate-300 font-semibold mb-1">
+                {language === 'si' ? 'මනාපයන් (කොමා වලින් වෙන් කරන්න)' : 'Interests (comma separated)'}
+              </label>
               <input
                 type="text"
                 value={interestsStr}
@@ -205,14 +224,16 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   className="accent-amber-400 w-4 h-4"
                 />
                 <span className="font-semibold text-amber-300">
-                  Enable Verified Party Companion Profile ✨
+                  {language === 'si' ? 'සත්‍යාපිත පාටි සහකරු පැතිකඩ සක්‍රීය කරන්න ✨' : 'Enable Verified Party Companion Profile ✨'}
                 </span>
               </label>
 
               {isCompanion && (
                 <div className="space-y-2 pt-1">
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Companion Headline</label>
+                    <label className="block text-slate-400 font-semibold mb-1">
+                      {language === 'si' ? 'සහකරු සිරස්තලය' : 'Companion Headline'}
+                    </label>
                     <input
                       type="text"
                       placeholder="e.g. VIP Rooftop & Cocktail Companion"
@@ -223,7 +244,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-slate-400 font-semibold mb-1">Companion Rate</label>
+                    <label className="block text-slate-400 font-semibold mb-1">
+                      {language === 'si' ? 'සහකරු ගාස්තු' : 'Companion Rate'}
+                    </label>
                     <input
                       type="text"
                       placeholder="e.g. LKR 20,000 / evening escort"
@@ -240,15 +263,15 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 font-semibold"
+                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 font-semibold cursor-pointer"
               >
-                Cancel
+                {language === 'si' ? 'අවලංගු කරන්න' : 'Cancel'}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] text-white font-bold shadow-md shadow-[#E63946]/30"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] text-white font-bold shadow-md shadow-[#E63946]/30 cursor-pointer"
               >
-                Save Changes
+                {language === 'si' ? 'වෙනස්කම් සුරකින්න' : 'Save Changes'}
               </button>
             </div>
           </form>

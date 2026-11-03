@@ -3,24 +3,19 @@ import { UserProfile, PartyEvent, CocktailItem, SriLankanCity, ALL_SRI_LANKAN_CI
 import { 
   Plus, 
   Trash2, 
-  Edit3, 
   Calendar, 
-  Clock, 
   CreditCard, 
-  ShieldCheck, 
-  Sparkles, 
   Store, 
-  Users, 
   Wine, 
   Check, 
   X,
-  Radio,
-  Image as ImageIcon,
   Upload,
   AlertTriangle
 } from 'lucide-react';
 import { PayHereSubscription } from './PayHereSubscription';
 import { generateUUID } from '../utils/uuid';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface VendorPortalProps {
   currentUser: UserProfile;
@@ -45,13 +40,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
   onPayVendorPass,
   onSwitchToVendorRole,
 }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'events' | 'menu' | 'subscription'>('events');
   const [showEventModal, setShowEventModal] = useState(false);
   const [showCocktailModal, setShowCocktailModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedGateway, setSelectedGateway] = useState<'PAYHERE' | 'PAYPAL'>('PAYHERE');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [successGateway, setSuccessGateway] = useState<'PAYHERE' | 'PAYPAL'>('PAYHERE');
 
   // New Event form state
   const [newEvent, setNewEvent] = useState({
@@ -185,77 +178,6 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
     setNewCocktail({ ...newCocktail, name: '', description: '', imageUrl: '' });
   };
 
-  const handlePayHerePayment = () => {
-    const orderId = `PAYHERE-LK-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-    // Check if PayHere SDK is loaded
-    if (typeof (window as any).payhere !== 'undefined') {
-      const payment = {
-        sandbox: true,
-        merchant_id: '1211149', // PayHere demo/sandbox merchant ID
-        return_url: window.location.href,
-        cancel_url: window.location.href,
-        notify_url: 'https://ais-dev-q6tfasqguabaf3ir3y7piy-790210666661.asia-southeast1.run.app/api/payhere-notify',
-        order_id: orderId,
-        items: 'Lovable LK Monthly Vendor Pass',
-        amount: '5000.00',
-        currency: 'LKR',
-        first_name: currentUser.name.split(' ')[0] || 'Venue',
-        last_name: currentUser.name.split(' ')[1] || 'Partner',
-        email: currentUser.email,
-        phone: '+94 77 123 4567',
-        address: 'Colombo, Sri Lanka',
-        city: currentUser.city,
-        country: 'Sri Lanka',
-      };
-
-      (window as any).payhere.onCompleted = function onCompleted(_orderId: string) {
-        onPayVendorPass(orderId, 'PAYHERE');
-        setSuccessGateway('PAYHERE');
-        setPaymentSuccess(true);
-        setTimeout(() => {
-          setPaymentSuccess(false);
-          setShowPaymentModal(false);
-        }, 2200);
-      };
-
-      (window as any).payhere.onDismissed = function onDismissed() {
-        // User closed popup
-      };
-
-      (window as any).payhere.onError = function onError(error: string) {
-        console.warn('PayHere error, using instant gateway confirmation:', error);
-      };
-
-      try {
-        (window as any).payhere.startPayment(payment);
-        return;
-      } catch (err) {
-        console.warn('PayHere startPayment fallback:', err);
-      }
-    }
-
-    // Direct Instant Simulation fallback if iframe sandbox blocks external popup
-    onPayVendorPass(orderId, 'PAYHERE');
-    setSuccessGateway('PAYHERE');
-    setPaymentSuccess(true);
-    setTimeout(() => {
-      setPaymentSuccess(false);
-      setShowPaymentModal(false);
-    }, 2200);
-  };
-
-  const handlePayPalPayment = () => {
-    const orderId = `PAYPAL-LK-${Math.floor(100000 + Math.random() * 900000)}`;
-    onPayVendorPass(orderId, 'PAYPAL');
-    setSuccessGateway('PAYPAL');
-    setPaymentSuccess(true);
-    setTimeout(() => {
-      setPaymentSuccess(false);
-      setShowPaymentModal(false);
-    }, 2200);
-  };
-
   return (
     <div className="my-8">
       {/* Top Banner & Header */}
@@ -264,32 +186,34 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
               <Store className="w-3.5 h-3.5" />
-              <span>Venue & Nightlife Organizer Hub</span>
+              <span>{t.vendorHub}</span>
             </span>
             {currentUser.role !== 'vendor' && currentUser.role !== 'admin' && (
               <button
                 onClick={onSwitchToVendorRole}
-                className="text-[11px] underline text-[#FF758F] hover:text-white"
+                className="text-[11px] underline text-[#FF758F] hover:text-white cursor-pointer"
               >
-                (Activate Venue Owner Mode)
+                {t.activateVenueOwnerMode}
               </button>
             )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Club & Lounge Management Portal
+            {t.vendorPortalTitle}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
-            Publish party guest lists, upload flyers, curate cocktails, and track RSVPs in real time
+            {t.vendorPortalSubtitle}
           </p>
         </div>
 
-        {/* 30-Day Free Trial / Subscription Pill & PayHere CTA */}
+        {/* 30-Day Pass Status & PayHere CTA */}
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
             <div className="text-right">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Party Publishing Pass</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">{language === 'si' ? 'පාටි පළකිරීමේ අවසරය' : 'Party Publishing Pass'}</p>
               <p className={`text-xs font-bold font-mono ${isSubscriptionActive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {isSubscriptionActive ? `${diffDays} Days Active` : 'Pass Expired'}
+                {isSubscriptionActive 
+                  ? (language === 'si' ? `තව දින ${diffDays}ක් සක්‍රීයයි` : `${diffDays} Days Active`)
+                  : (language === 'si' ? 'අවසරය කල් ඉකුත් වී ඇත' : 'Pass Expired')}
               </p>
             </div>
             <button
@@ -297,7 +221,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all hover:scale-105 cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>{isSubscriptionActive ? '+ Add Month (PayHere)' : 'Renew Pass (PayHere)'}</span>
+              <span>{isSubscriptionActive ? t.addMonthPayHere : t.renewPayHere}</span>
             </button>
           </div>
         </div>
@@ -307,38 +231,38 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       <div className="flex items-center gap-3 border-b border-white/10 pb-3 mb-6">
         <button
           onClick={() => setActiveTab('events')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'events'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>My Events ({vendorEvents.length})</span>
+          <span>{t.myEventsTab} ({vendorEvents.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('menu')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'menu'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <Wine className="w-4 h-4" />
-          <span>Cocktail & Tapas Menu ({vendorCocktails.length})</span>
+          <span>{t.menuTab} ({vendorCocktails.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('subscription')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'subscription'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          <span>PayHere Subscription</span>
+          <span>{t.payhereTab}</span>
         </button>
       </div>
 
@@ -350,9 +274,9 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white">Party Publishing Pass Concluded</p>
-              <p className="text-[11px] text-slate-400">
-                Your 1-month trial has expired. Subscribe with PayHere (LKR 5,000 / month) to add another month of adding parties, techno raves, and drink specials.
+              <p className="text-xs font-bold text-white">{t.lockedAlertTitle}</p>
+              <p className="text-[11px] text-slate-300">
+                {t.lockedAlertDesc}
               </p>
             </div>
           </div>
@@ -360,7 +284,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             onClick={() => setShowPaymentModal(true)}
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold whitespace-nowrap shadow-md shadow-[#E63946]/20 hover:scale-105 transition-all cursor-pointer"
           >
-            Add Month via PayHere
+            {t.addMonthPayHere}
           </button>
         </div>
       )}
@@ -368,30 +292,10 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       {/* TAB 1: EVENTS MANAGEMENT */}
       {activeTab === 'events' && (
         <div className="space-y-6">
-          {!isSubscriptionActive && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Party Publishing Locked</h4>
-                  <p className="text-[11px] text-slate-300">
-                    Pay via PayHere to add 1 month (or more) of adding rave parties and guestlists.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold shadow-md cursor-pointer whitespace-nowrap"
-              >
-                Unlock with PayHere
-              </button>
-            </div>
-          )}
-
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-base">Published Parties & Guestlists</h3>
+            <h3 className="font-bold text-white text-base">
+              {language === 'si' ? 'පළ කරන ලද පාටි සහ ඉවෙන්ට්ස්' : 'Published Parties & Guestlists'}
+            </h3>
             <button
               onClick={() => {
                 if (!isSubscriptionActive) {
@@ -403,7 +307,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               className="py-2 px-4 rounded-xl bg-[#E63946] hover:bg-[#D90429] text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#E63946]/20 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add New Party Event</span>
+              <span>{t.addPartyEvent}</span>
             </button>
           </div>
 
@@ -432,12 +336,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
 
                   <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
                     <span className="text-xs text-slate-300 font-mono">
-                      <strong className="text-emerald-400">{evt.attendeeIds.length}</strong> RSVPs
+                      <strong className="text-emerald-400">{evt.attendeeIds.length}</strong> {t.attendeesCount}
                     </span>
 
                     <button
                       onClick={() => onDeleteEvent(evt.id)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                       title="Delete Event"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -453,30 +357,10 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
       {/* TAB 2: COCKTAIL MENU MANAGEMENT */}
       {activeTab === 'menu' && (
         <div className="space-y-6">
-          {!isSubscriptionActive && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">Menu Showcases Locked</h4>
-                  <p className="text-[11px] text-slate-300">
-                    Active PayHere subscription required to curate signature mixology & tapas.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold shadow-md cursor-pointer whitespace-nowrap"
-              >
-                Unlock with PayHere
-              </button>
-            </div>
-          )}
-
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-base">Signature Mixology & Tapas</h3>
+            <h3 className="font-bold text-white text-base">
+              {t.signatureCocktails}
+            </h3>
             <button
               onClick={() => {
                 if (!isSubscriptionActive) {
@@ -488,7 +372,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               className="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Drink / Dish</span>
+              <span>{t.addCocktailDish}</span>
             </button>
           </div>
 
@@ -502,7 +386,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-bold text-white text-sm">{item.name}</h4>
                     <span className="font-mono text-xs font-bold text-amber-300">
-                      LKR {item.priceLKR.toLocaleString()}
+                      {t.lkrPrice} {item.priceLKR.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1 line-clamp-2">{item.description}</p>
@@ -512,7 +396,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   <span className="text-[11px] text-slate-500">{item.category}</span>
                   <button
                     onClick={() => onDeleteCocktail(item.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
                     title="Delete item"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -544,22 +428,26 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             className="relative w-full max-w-lg bg-[#14141B] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 text-xs"
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="font-bold text-base text-white">Create Nightlife Event</h3>
+              <h3 className="font-bold text-base text-white">
+                {language === 'si' ? 'නව පාටි ඉවෙන්ට් එකක් සාදන්න' : 'Create Nightlife Event'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowEventModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Event Title</label>
+              <label className="block text-slate-400 font-semibold mb-1">
+                {language === 'si' ? 'ඉවෙන්ට් නම' : 'Event Title'}
+              </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Lotus Vista Melodic Sessions"
+                placeholder={language === 'si' ? 'උදා: Lotus Vista Melodic Sessions' : 'e.g. Lotus Vista Melodic Sessions'}
                 value={newEvent.title}
                 onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-[#E63946]"
@@ -568,21 +456,25 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Category</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'වර්ගය' : 'Category'}
+                </label>
                 <select
                   value={newEvent.category}
                   onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value as any })}
                   className="w-full px-3 py-2 rounded-xl bg-[#1C1C26] border border-white/10 text-white"
                 >
-                  <option value="VIP Rooftop">VIP Rooftop</option>
-                  <option value="Beach Party">Beach Party</option>
-                  <option value="Techno Rave">Techno Rave</option>
-                  <option value="Ladies Night">Ladies Night</option>
+                  <option value="VIP Rooftop">{language === 'si' ? 'වී.අයි.පී රූෆ්ටොප්' : 'VIP Rooftop'}</option>
+                  <option value="Beach Party">{language === 'si' ? 'වෙරළ සාදය' : 'Beach Party'}</option>
+                  <option value="Techno Rave">{language === 'si' ? 'ටෙක්නෝ රේව්' : 'Techno Rave'}</option>
+                  <option value="Ladies Night">{language === 'si' ? 'කාන්තා රාත්‍රිය' : 'Ladies Night'}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">City</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'නගරය' : 'City'}
+                </label>
                 <select
                   value={newEvent.city}
                   onChange={(e) => setNewEvent({ ...newEvent, city: e.target.value as SriLankanCity })}
@@ -590,7 +482,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                 >
                   {ALL_SRI_LANKAN_CITIES.map((c) => (
                     <option key={c} value={c} className="bg-[#1C1C26] text-white">
-                      {c}
+                      {SINHALA_CITIES[c] || c}
                     </option>
                   ))}
                 </select>
@@ -599,7 +491,9 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Date & Timing</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'දිනය සහ වේලාව' : 'Date & Timing'}
+                </label>
                 <input
                   type="text"
                   placeholder="Saturday • 8:00 PM"
@@ -609,7 +503,9 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Entry Price / Pass</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'ඇතුල්වීමේ ගාස්තුව' : 'Entry Price / Pass'}
+                </label>
                 <input
                   type="text"
                   placeholder="Free Entry (Guestlist)"
@@ -625,11 +521,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <label className="block text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Upload className="w-4 h-4 text-[#FF758F]" />
-                  <span>Choose Party Event Flyer</span>
+                  <span>{language === 'si' ? 'පාටි ඉවෙන්ට් පියාපත තෝරන්න' : 'Choose Party Event Flyer'}</span>
                 </span>
                 {newEvent.flyerUrl && (
                   <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Flyer Selected
+                    <Check className="w-3 h-3" /> {language === 'si' ? 'පියාපත තෝරාගෙන ඇත' : 'Flyer Selected'}
                   </span>
                 )}
               </label>
@@ -643,11 +539,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end justify-between p-3">
                     <span className="text-xs font-semibold text-white truncate max-w-[65%]">
-                      Flyer ready for publication
+                      {language === 'si' ? 'පියාපත සූදානම්' : 'Flyer ready for publication'}
                     </span>
                     <div className="flex items-center gap-2">
                       <label className="cursor-pointer px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-medium transition-all">
-                        Change
+                        {language === 'si' ? 'වෙනස් කරන්න' : 'Change'}
                         <input
                           type="file"
                           accept="image/*"
@@ -658,7 +554,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                       <button
                         type="button"
                         onClick={() => setNewEvent(prev => ({ ...prev, flyerUrl: '' }))}
-                        className="p-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors cursor-pointer"
                         title="Remove flyer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -674,7 +570,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-white group-hover:text-[#FF758F] transition-colors">
-                        Click to upload party event flyer
+                        {language === 'si' ? 'පාටි පියාපතක් අප්ලෝඩ් කිරීමට මෙතන ඔබන්න' : 'Click to upload party event flyer'}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         PNG, JPG, or WEBP up to 10MB
@@ -693,7 +589,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="url"
-                  placeholder="Or paste flyer image URL..."
+                  placeholder={language === 'si' ? 'නැතහොත් පියාපත් Image URL එක ඇතුළත් කරන්න...' : 'Or paste flyer image URL...'}
                   value={newEvent.flyerUrl.startsWith('data:') ? '' : newEvent.flyerUrl}
                   onChange={(e) => setNewEvent({ ...newEvent, flyerUrl: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs"
@@ -702,10 +598,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Description</label>
+              <label className="block text-slate-400 font-semibold mb-1">
+                {language === 'si' ? 'විස්තරය' : 'Description'}
+              </label>
               <textarea
                 rows={2}
-                placeholder="Give guests the vibe details..."
+                placeholder={language === 'si' ? 'ඉවෙන්ට් එක පිළිබඳ විස්තරයක් ඇතුළත් කරන්න...' : 'Give guests the vibe details...'}
                 value={newEvent.description}
                 onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
@@ -720,7 +618,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   onChange={(e) => setNewEvent({ ...newEvent, isActiveTonight: e.target.checked })}
                   className="accent-[#E63946]"
                 />
-                <span>Active Tonight</span>
+                <span>{language === 'si' ? 'අද රාත්‍රියේ සක්‍රීයයි' : 'Active Tonight'}</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer text-slate-300">
@@ -730,7 +628,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   onChange={(e) => setNewEvent({ ...newEvent, isLiveDJ: e.target.checked })}
                   className="accent-[#E63946]"
                 />
-                <span>Live DJ Performing</span>
+                <span>{language === 'si' ? 'සජීවී ඩීජේ' : 'Live DJ Performing'}</span>
               </label>
             </div>
 
@@ -738,15 +636,15 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowEventModal(false)}
-                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300"
+                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 cursor-pointer"
               >
-                Cancel
+                {language === 'si' ? 'අවලංගු කරන්න' : 'Cancel'}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-[#E63946] text-white font-bold shadow-md shadow-[#E63946]/30"
+                className="px-5 py-2 rounded-xl bg-[#E63946] text-white font-bold shadow-md shadow-[#E63946]/30 cursor-pointer"
               >
-                Publish Event
+                {language === 'si' ? 'ඉවෙන්ට් එක පළ කරන්න' : 'Publish Event'}
               </button>
             </div>
           </form>
@@ -761,18 +659,22 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             className="relative w-full max-w-lg bg-[#14141B] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 text-xs"
           >
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="font-bold text-base text-white">Add Signature Drink or Tapas</h3>
+              <h3 className="font-bold text-base text-white">
+                {language === 'si' ? 'නව කොක්ටේල් හෝ තපස් කෑමක් එක් කරන්න' : 'Add Signature Drink or Tapas'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowCocktailModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Item Name</label>
+              <label className="block text-slate-400 font-semibold mb-1">
+                {language === 'si' ? 'නම' : 'Item Name'}
+              </label>
               <input
                 type="text"
                 required
@@ -785,19 +687,23 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Category</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'වර්ගය' : 'Category'}
+                </label>
                 <select
                   value={newCocktail.category}
                   onChange={(e) => setNewCocktail({ ...newCocktail, category: e.target.value as any })}
                   className="w-full px-3 py-2 rounded-xl bg-[#1C1C26] border border-white/10 text-white"
                 >
-                  <option value="Signature Cocktail">Signature Cocktail</option>
-                  <option value="Tapas & Bites">Tapas & Bites</option>
+                  <option value="Signature Cocktail">{language === 'si' ? 'සිග්නේචර් කොක්ටේල්' : 'Signature Cocktail'}</option>
+                  <option value="Tapas & Bites">{language === 'si' ? 'තපස් සහ බයිට්ස්' : 'Tapas & Bites'}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Price in LKR</label>
+                <label className="block text-slate-400 font-semibold mb-1">
+                  {language === 'si' ? 'මිල (රු.)' : 'Price in LKR'}
+                </label>
                 <input
                   type="number"
                   required
@@ -810,7 +716,9 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Ingredients (comma separated)</label>
+              <label className="block text-slate-400 font-semibold mb-1">
+                {language === 'si' ? 'අමුද්‍රව්‍ය (කොමා වලින් වෙන් කරන්න)' : 'Ingredients (comma separated)'}
+              </label>
               <input
                 type="text"
                 placeholder="Arrack, Passionfruit, Ginger, Bitters"
@@ -825,11 +733,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <label className="block text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Upload className="w-4 h-4 text-amber-400" />
-                  <span>Choose Cocktail / Tapas Image</span>
+                  <span>{language === 'si' ? 'කොක්ටේල් ඡායාරූපය තෝරන්න' : 'Choose Cocktail / Tapas Image'}</span>
                 </span>
                 {newCocktail.imageUrl && (
                   <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Photo Selected
+                    <Check className="w-3 h-3" /> {language === 'si' ? 'ඡායාරූපය තෝරාගෙන ඇත' : 'Photo Selected'}
                   </span>
                 )}
               </label>
@@ -843,11 +751,11 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex items-end justify-between p-3">
                     <span className="text-xs font-semibold text-white truncate max-w-[65%]">
-                      Cocktail photo ready
+                      {language === 'si' ? 'ඡායාරූපය සූදානම්' : 'Cocktail photo ready'}
                     </span>
                     <div className="flex items-center gap-2">
                       <label className="cursor-pointer px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-medium transition-all">
-                        Change
+                        {language === 'si' ? 'වෙනස් කරන්න' : 'Change'}
                         <input
                           type="file"
                           accept="image/*"
@@ -858,7 +766,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                       <button
                         type="button"
                         onClick={() => setNewCocktail(prev => ({ ...prev, imageUrl: '' }))}
-                        className="p-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-white transition-colors cursor-pointer"
                         title="Remove photo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -874,7 +782,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                     </div>
                     <div>
                       <p className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
-                        Click to upload cocktail or dish photo
+                        {language === 'si' ? 'කොක්ටේල් ඡායාරූපයක් එක් කිරීමට මෙතන ඔබන්න' : 'Click to upload cocktail or dish photo'}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         PNG, JPG, or WEBP up to 10MB
@@ -893,7 +801,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="url"
-                  placeholder="Or paste direct cocktail image URL..."
+                  placeholder={language === 'si' ? 'නැතහොත් කෙලින්ම Image URL එක ඇතුළත් කරන්න...' : 'Or paste direct cocktail image URL...'}
                   value={newCocktail.imageUrl.startsWith('data:') ? '' : newCocktail.imageUrl}
                   onChange={(e) => setNewCocktail({ ...newCocktail, imageUrl: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-xs"
@@ -902,10 +810,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             </div>
 
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Description</label>
+              <label className="block text-slate-400 font-semibold mb-1">
+                {language === 'si' ? 'විස්තරය' : 'Description'}
+              </label>
               <textarea
                 rows={2}
-                placeholder="Flavor profile and pairing notes..."
+                placeholder={language === 'si' ? 'රස සහ සුවඳ පිළිබඳ විස්තරයක්...' : 'Flavor profile and pairing notes...'}
                 value={newCocktail.description}
                 onChange={(e) => setNewCocktail({ ...newCocktail, description: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
@@ -916,28 +826,28 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowCocktailModal(false)}
-                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300"
+                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 cursor-pointer"
               >
-                Cancel
+                {language === 'si' ? 'අවලංගු කරන්න' : 'Cancel'}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-500 text-black font-bold shadow-md"
+                className="px-5 py-2 rounded-xl bg-amber-500 text-black font-bold shadow-md cursor-pointer"
               >
-                Save Item
+                {language === 'si' ? 'සුරකින්න' : 'Save Item'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* MODAL: PAYHERE & PAYPAL GATEWAY CHECKOUT (LKR 5,000 / month) */}
+      {/* MODAL: PAYHERE SUBSCRIPTION CHECKOUT (LKR 5,000 / month) */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto no-scrollbar">
             <button
               onClick={() => setShowPaymentModal(false)}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
+              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

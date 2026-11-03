@@ -5,16 +5,12 @@ import {
   Bell, 
   X, 
   Clock, 
-  Calendar, 
   MapPin, 
-  Check, 
   Sparkles, 
-  Trash2, 
-  AlertCircle,
   ExternalLink,
-  ChevronRight,
-  ShieldCheck
+  ChevronRight
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface NotificationCenterProps {
   currentUser: UserProfile | null;
@@ -29,6 +25,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   onSelectEvent,
   onOpenAuth,
 }) => {
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [activeToast, setActiveToast] = useState<AppNotification | null>(null);
@@ -75,7 +72,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       if (onOpenAuth) onOpenAuth('login');
       return;
     }
-    // Find the first event to send a 2h alert for
     const targetEvent = events[0];
     if (targetEvent) {
       storage.triggerImmediate2HourReminder(currentUser.id, targetEvent.id);
@@ -88,8 +84,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 transition-colors border border-white/10"
-          title="Automated Event Alerts & Reminders"
+          className="relative p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 transition-colors border border-white/10 cursor-pointer"
+          title={t.notificationTitle}
           aria-label="View notifications"
         >
           <Bell className="w-5 h-5" />
@@ -113,14 +109,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
-                    Live Event Alerts
+                    <span>{t.liveEventAlerts}</span>
                     {unreadCount > 0 && (
                       <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full font-mono">
-                        {unreadCount} new
+                        {unreadCount} {language === 'si' ? 'නව' : 'new'}
                       </span>
                     )}
                   </h3>
-                  <p className="text-[10px] text-slate-400">Automated 2-hour pre-event radar</p>
+                  <p className="text-[10px] text-slate-400">{t.automated2hRadar}</p>
                 </div>
               </div>
 
@@ -128,14 +124,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 {unreadCount > 0 && (
                   <button
                     onClick={() => storage.markAllNotificationsRead()}
-                    className="text-[10px] text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 transition-colors"
+                    className="text-[10px] text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 transition-colors cursor-pointer"
                   >
-                    Mark read
+                    {t.markRead}
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
+                  className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -147,9 +143,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               {notifications.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs">
                   <Clock className="w-8 h-8 mx-auto mb-2 opacity-30 text-amber-400" />
-                  <p className="font-semibold text-white">No active 2-hour alerts right now</p>
+                  <p className="font-semibold text-white">{t.noNotifications}</p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    RSVP to tonight's parties to receive automated alerts 2 hours before kickoff!
+                    {t.noNotificationsDesc}
                   </p>
                 </div>
               ) : (
@@ -171,7 +167,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         </div>
                         <button
                           onClick={() => handleClear(notif.id)}
-                          className="text-slate-500 hover:text-red-400 p-0.5"
+                          className="text-slate-500 hover:text-red-400 p-0.5 cursor-pointer"
                           title="Dismiss"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -195,9 +191,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                               handleMarkAsRead(notif.id);
                               setIsOpen(false);
                             }}
-                            className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5"
+                            className="text-[10px] font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-0.5 cursor-pointer"
                           >
-                            <span>Open Party Pass</span>
+                            <span>{t.openPartyPass}</span>
                             <ChevronRight className="w-3 h-3" />
                           </button>
                         </div>
@@ -210,13 +206,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
             {/* Test Trigger Helper */}
             <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
-              <span className="text-slate-400 text-[10px]">Test automated alert:</span>
+              <span className="text-slate-400 text-[10px]">{t.testAutomatedAlert}</span>
               <button
                 onClick={handleTriggerTestReminder}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold transition-all flex items-center gap-1 text-[11px]"
+                className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-semibold transition-all flex items-center gap-1 text-[11px] cursor-pointer"
               >
                 <Sparkles className="w-3 h-3" />
-                <span>Simulate 2-Hour Alert</span>
+                <span>{t.simulate2hAlert}</span>
               </button>
             </div>
           </div>
@@ -234,9 +230,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40">
-                    2-Hour Party Radar
+                    {language === 'si' ? 'පැය 2ක පාටි රේඩාර්' : '2-Hour Party Radar'}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-mono">Just now</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{language === 'si' ? 'දැන්' : 'Just now'}</span>
                 </div>
                 <h4 className="font-bold text-sm text-white mt-1">
                   {activeToast.title}
@@ -253,23 +249,23 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         if (evt && onSelectEvent) onSelectEvent(evt);
                         handleMarkAsRead(activeToast.id);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1 transition-all"
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1 transition-all cursor-pointer"
                     >
-                      <span>Show VIP Pass</span>
+                      <span>{t.openPartyPass}</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   )}
                   <button
                     onClick={() => handleMarkAsRead(activeToast.id)}
-                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-semibold transition-all"
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-semibold transition-all cursor-pointer"
                   >
-                    Got it
+                    {t.gotIt}
                   </button>
                 </div>
               </div>
               <button
                 onClick={() => setActiveToast(null)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
                 aria-label="Close alert"
               >
                 <X className="w-4 h-4" />

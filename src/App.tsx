@@ -33,8 +33,11 @@ import { AuthModal } from './components/AuthModal';
 import { SafetyModals, ReportModal } from './components/SafetyModals';
 import { ProfileEditModal } from './components/ProfileEditModal';
 import { Sparkles, Heart, Shield, MapPin } from 'lucide-react';
+import { useLanguage } from './context/LanguageContext';
 
 export default function App() {
+  const { t, language } = useLanguage();
+
   // Global synchronized states from storage
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(storage.getCurrentUser());
   const [users, setUsers] = useState<UserProfile[]>(storage.getUsers());
@@ -343,15 +346,19 @@ export default function App() {
               <div className="w-16 h-16 rounded-full bg-[#E63946]/10 flex items-center justify-center mx-auto text-[#FF758F]">
                 <Heart className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-extrabold text-white">Join the Dating Stack</h2>
+              <h2 className="text-2xl font-extrabold text-white">
+                {language === 'si' ? 'ඩේටිං තට්ටුවට එක්වන්න' : 'Join the Dating Stack'}
+              </h2>
               <p className="text-xs text-slate-400">
-                Log in or register to browse singles, swipe verified companion profiles, and match for tonight's parties.
+                {language === 'si'
+                  ? 'තනිකඩයින් බැලීමට, සත්‍යාපිත පාටි සහකරුවන් Like කිරීමට සහ අද රාත්‍රියේ පාටි සඳහා ගැලපීමට ලොග් වන්න හෝ ලියාපදිංචි වන්න.'
+                  : "Log in or register to browse singles, swipe verified companion profiles, and match for tonight's parties."}
               </p>
               <button
                 onClick={() => handleOpenAuth('register')}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] text-white font-bold text-xs shadow-lg shadow-[#E63946]/30"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] text-white font-bold text-xs shadow-lg shadow-[#E63946]/30 cursor-pointer"
               >
-                Join Free Now
+                {language === 'si' ? 'නොමිලේ දැන්ම එක්වන්න' : 'Join Free Now'}
               </button>
             </div>
           )
@@ -395,15 +402,19 @@ export default function App() {
             />
           ) : (
             <div className="my-16 text-center max-w-md mx-auto p-8 rounded-3xl bg-[#14141B] border border-white/10 space-y-4">
-              <h2 className="text-2xl font-extrabold text-white">Vendor Portal</h2>
+              <h2 className="text-2xl font-extrabold text-white">
+                {language === 'si' ? 'වෙනිව් කළමනාකරණ පෝටල් එක' : 'Vendor Portal'}
+              </h2>
               <p className="text-xs text-slate-400">
-                Please log in to manage your club, rooftop bar, or rave event guestlists.
+                {language === 'si'
+                  ? 'ඔබගේ ක්ලබ් එක, රූෆ්ටොප් බාර් එක හෝ රේව් සාද කළමනාකරණය සඳහා කරුණාකර ලොග් වන්න.'
+                  : 'Please log in to manage your club, rooftop bar, or rave event guestlists.'}
               </p>
               <button
                 onClick={() => handleOpenAuth('login')}
-                className="w-full py-3 rounded-xl bg-amber-500 text-black font-bold text-xs"
+                className="w-full py-3 rounded-xl bg-amber-500 text-black font-bold text-xs cursor-pointer"
               >
-                Log In as Vendor
+                {language === 'si' ? 'වෙනිව් හිමිකරු ලෙස ලොග් වන්න' : 'Log In as Vendor'}
               </button>
             </div>
           )
@@ -440,28 +451,28 @@ export default function App() {
             <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#E63946] to-[#FF758F] flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-white tracking-tight">Lovable LK</span>
+            <span className="font-bold text-white tracking-tight">{t.brandName}</span>
             <span className="text-slate-600">·</span>
-            <span className="text-[11px] text-slate-400">Sri Lanka’s Premier Nightlife & Companion Platform</span>
+            <span className="text-[11px] text-slate-400">{t.brandTagline}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-[11px]">
-            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors">
-              Privacy Policy
+            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors cursor-pointer">
+              {t.privacyPolicyTab}
             </button>
-            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors">
-              Terms of Service
+            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors cursor-pointer">
+              {t.termsOfServiceTab}
             </button>
-            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors">
-              Zero-Tolerance UGC Safety
+            <button onClick={() => setShowSafetyModal(true)} className="hover:text-white transition-colors cursor-pointer">
+              {t.ugcSafetyTab}
             </button>
-            <button onClick={() => setShowSafetyModal(true)} className="hover:text-rose-400 transition-colors">
-              GDPR Data Safety
+            <button onClick={() => setShowSafetyModal(true)} className="hover:text-rose-400 transition-colors cursor-pointer">
+              {t.gdprAccountDeletionTab}
             </button>
           </div>
 
           <div className="text-[11px] text-slate-500">
-            &copy; {new Date().getFullYear()} Lovable LK. All rights reserved.
+            &copy; {new Date().getFullYear()} {t.brandName}. {t.allRightsReserved}
           </div>
         </div>
       </footer>

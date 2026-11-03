@@ -1,6 +1,8 @@
 import React from 'react';
 import { UserProfile } from '../types';
 import { BadgeCheck, MapPin, Sparkles, MessageCircle, Heart } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface CompanionCarouselProps {
   companions: UserProfile[];
@@ -15,19 +17,21 @@ export const CompanionCarousel: React.FC<CompanionCarouselProps> = ({
   onLikeProfile,
   onChatProfile,
 }) => {
+  const { t, language } = useLanguage();
+
   return (
     <section className="my-8">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            Singles & Companions <span className="text-amber-400">✨</span>
+            {t.singlesAndCompanions} <span className="text-amber-400">✨</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Verified party dates, rave partners & VIP rooftop companions across Sri Lanka
+            {t.singlesSubtitle}
           </p>
         </div>
         <div className="text-xs text-slate-400 font-medium hidden sm:block">
-          Scroll to explore &rarr;
+          {language === 'si' ? 'තව බලන්න ස්ක්‍රෝල් කරන්න →' : 'Scroll to explore →'}
         </div>
       </div>
 
@@ -58,12 +62,12 @@ export const CompanionCarousel: React.FC<CompanionCarouselProps> = ({
                 {profile.isCompanion ? (
                   <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-500/90 text-black shadow-md flex items-center gap-1 backdrop-blur-md">
                     <Sparkles className="w-3 h-3" />
-                    <span>Verified Companion</span>
+                    <span>{t.verifiedCompanion}</span>
                   </span>
                 ) : profile.isOnline ? (
                   <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-emerald-500/80 text-white shadow-md flex items-center gap-1.5 backdrop-blur-md">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    <span>Active Now</span>
+                    <span>{t.activeNow}</span>
                   </span>
                 ) : null}
               </div>
@@ -98,7 +102,7 @@ export const CompanionCarousel: React.FC<CompanionCarouselProps> = ({
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-[#E63946]" />
-                    <span>{profile.city}</span>
+                    <span>{SINHALA_CITIES[profile.city] ? SINHALA_CITIES[profile.city].split(' ')[0] : profile.city}</span>
                   </span>
                   <span>·</span>
                   <span className="truncate">{profile.lookingFor}</span>
@@ -121,23 +125,23 @@ export const CompanionCarousel: React.FC<CompanionCarouselProps> = ({
               <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-2">
                 <button
                   onClick={() => onSelectProfile(profile)}
-                  className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  className="flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <span>Meet 👋</span>
+                  <span>{t.meetButton}</span>
                 </button>
 
                 <button
                   onClick={() => onLikeProfile(profile)}
-                  className="p-2 rounded-xl bg-[#E63946]/10 hover:bg-[#E63946]/20 text-[#FF758F] border border-[#E63946]/30 transition-colors"
-                  title="Add Love 💕"
+                  className="p-2 rounded-xl bg-[#E63946]/10 hover:bg-[#E63946]/20 text-[#FF758F] border border-[#E63946]/30 transition-colors cursor-pointer"
+                  title={t.addLoveButton}
                 >
                   <Heart className="w-4 h-4" />
                 </button>
 
                 <button
                   onClick={() => onChatProfile(profile)}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 transition-colors"
-                  title="Chat Now"
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 transition-colors cursor-pointer"
+                  title={t.chatNowButton}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </button>

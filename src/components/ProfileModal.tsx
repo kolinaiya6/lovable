@@ -13,6 +13,8 @@ import {
   Clock, 
   Check 
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface ProfileModalProps {
   profile: UserProfile | null;
@@ -35,6 +37,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onBlock,
   isFriendRequested = false,
 }) => {
+  const { t, language } = useLanguage();
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
 
   if (!profile) return null;
@@ -50,7 +53,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-md"
+          className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-md cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -76,7 +79,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   <button
                     key={idx}
                     onClick={() => setActivePhotoIdx(idx)}
-                    className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
                       activePhotoIdx === idx ? 'border-[#E63946] scale-105' : 'border-white/30 opacity-70'
                     }`}
                   >
@@ -91,13 +94,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {profile.isCompanion && (
                 <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500 text-black shadow-lg flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Verified Nightlife Companion</span>
+                  <span>{t.verifiedCompanion}</span>
                 </div>
               )}
               {profile.isOnline && (
                 <div className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500 text-white shadow-lg flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span>Online in {profile.city}</span>
+                  <span>{t.activeNow}</span>
                 </div>
               )}
             </div>
@@ -126,10 +129,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <div className="flex items-center gap-3 text-sm text-slate-400 mt-2">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4 text-[#E63946]" />
-                  <span>{profile.city}, Sri Lanka</span>
+                  <span>{SINHALA_CITIES[profile.city] || profile.city}</span>
                 </span>
                 <span>·</span>
-                <span className="text-slate-300 font-medium">Looking for: {profile.lookingFor}</span>
+                <span className="text-slate-300 font-medium">
+                  {language === 'si' ? 'අපේක්ෂාව:' : 'Looking for:'} {profile.lookingFor}
+                </span>
               </div>
 
               {profile.companionHeadline && (
@@ -141,7 +146,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             {/* Bio */}
             <div className="space-y-2">
-              <h3 className="text-xs uppercase tracking-wider text-slate-400 font-semibold">About Me</h3>
+              <h3 className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                {language === 'si' ? 'මා ගැන' : 'About Me'}
+              </h3>
               <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-line bg-white/5 p-4 rounded-2xl border border-white/5">
                 {profile.bio}
               </p>
@@ -149,7 +156,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             {/* Interests & Music */}
             <div className="space-y-2">
-              <h3 className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Nightlife & Vibe Interests</h3>
+              <h3 className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                {language === 'si' ? 'නයිට්ලයිෆ් සහ සංගීත මනාපයන්' : 'Nightlife & Vibe Interests'}
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {profile.interests.map((interest, idx) => (
                   <span
@@ -172,7 +181,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               )}
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400" />
-                <span>Joined {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                <span>{language === 'si' ? 'එක්වූයේ:' : 'Joined'} {new Date(profile.createdAt).toLocaleDateString(language === 'si' ? 'si-LK' : 'en-US', { month: 'short', year: 'numeric' })}</span>
               </div>
             </div>
 
@@ -180,18 +189,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs text-slate-400">
               <button
                 onClick={() => onReport('profile', profile.id, `Profile: ${profile.name}`)}
-                className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
               >
                 <Flag className="w-3.5 h-3.5" />
-                <span>Report Inappropriate Content</span>
+                <span>{language === 'si' ? 'අනුචිත අන්තර්ගත වාර්තා කරන්න' : 'Report Inappropriate Content'}</span>
               </button>
 
               <button
                 onClick={() => onBlock(profile.id, profile.name)}
-                className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors"
+                className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Block User</span>
+                <span>{language === 'si' ? 'අවහිර කරන්න (Block)' : 'Block User'}</span>
               </button>
             </div>
           </div>
@@ -201,16 +210,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         <div className="p-4 sm:p-6 bg-[#0E0E14] border-t border-white/10 flex items-center justify-between gap-3">
           <button
             onClick={() => onLike(profile)}
-            className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+            className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <Heart className="w-4 h-4 text-[#FF758F]" />
-            <span>Like Profile</span>
+            <span>{t.likeButton}</span>
           </button>
 
           <button
             onClick={() => onSendLove(profile)}
             disabled={isFriendRequested}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               isFriendRequested 
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-default'
                 : 'bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white shadow-lg shadow-[#E63946]/30 hover:scale-[1.02]'
@@ -219,12 +228,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {isFriendRequested ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>Love Sent 💕</span>
+                <span>{language === 'si' ? 'ආදරය යවන ලදී 💕' : 'Love Sent 💕'}</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                <span>Add Love 💕</span>
+                <span>{t.addLoveButton}</span>
               </>
             )}
           </button>
@@ -234,10 +243,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               onChat(profile);
               onClose();
             }}
-            className="py-3 px-4 rounded-xl bg-[#2A2A38] hover:bg-[#343446] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all"
+            className="py-3 px-4 rounded-xl bg-[#2A2A38] hover:bg-[#343446] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <MessageCircle className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Chat Now 💬</span>
+            <span className="hidden sm:inline">{t.chatNowButton}</span>
           </button>
         </div>
       </div>

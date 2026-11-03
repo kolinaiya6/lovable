@@ -10,9 +10,10 @@ import {
   Calendar, 
   MapPin, 
   Check, 
-  CheckCheck,
-  UserPlus
+  CheckCheck
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   onRespondFriendRequest,
   onOpenProfile,
 }) => {
+  const { t, language } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -55,12 +57,10 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   // Users with whom current user has chat or matches
   const conversationUsers = users.filter(u => {
     if (u.id === currentUser.id) return false;
-    // Check if matched
     const isMatched = matches.some(m => 
       (m.user1Id === currentUser.id && m.user2Id === u.id) ||
       (m.user1Id === u.id && m.user2Id === currentUser.id)
     );
-    // Or has messages
     const hasMsgs = messages.some(m => 
       (m.senderId === currentUser.id && m.recipientId === u.id) ||
       (m.senderId === u.id && m.recipientId === currentUser.id)
@@ -86,7 +86,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
     onSendMessage(selectedChatUser.id, inputText.trim());
     setInputText('');
 
-    // Simulate natural companion typing indicator reply after 1.5 seconds!
+    // Simulate natural companion typing indicator reply
     if (selectedChatUser.isCompanion || selectedChatUser.role === 'user') {
       setTimeout(() => {
         setIsTyping(true);
@@ -94,7 +94,12 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
 
       setTimeout(() => {
         setIsTyping(false);
-        const replyResponses = [
+        const replyResponses = language === 'si' ? [
+          `අද රෑ ඔබව හමුවීමට බලාපොරොත්තු වෙනවා! 🥂 අපි Botanik හෝ Lotus Vista හිදී හමුවෙමුද?`,
+          `නියමයි! අපි රූෆ්ටොප් එකේදී කොක්ටේල් එකක් බොමු. ✨`,
+          `ආයුබෝවන්! වැලිගම බීච් සන්සෙට් එකට සූදානම් වෙමින් සිටින්නේ! 🌅`,
+          `ඉක්මනින් හමුවෙමු! අද රාත්‍රී පාටිය සුපිරියටම තියෙයි! 🎶`
+        ] : [
           `Excited to see you tonight! 🥂 Should we meet at Botanik or Lotus Vista?`,
           `Sounds fantastic! Let's get a cocktail by the terrace. ✨`,
           `Ayubowan! Just getting ready for the Weligama beach sunset! 🌅`,
@@ -109,9 +114,9 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   const handleSendSpecial = (type: 'party_invite' | 'cocktail_cheers') => {
     if (!selectedChatUser) return;
     if (type === 'party_invite') {
-      onSendMessage(selectedChatUser.id, '🥂 Invited you to Skyline Euphoria at Botanik tonight!', 'party_invite');
+      onSendMessage(selectedChatUser.id, language === 'si' ? '🥂 අද රාත්‍රියේ Botanik හි පැවැත්වෙන Skyline Euphoria පාටියට ඔබට ආරාධනා කරන ලදී!' : '🥂 Invited you to Skyline Euphoria at Botanik tonight!', 'party_invite');
     } else {
-      onSendMessage(selectedChatUser.id, '🍸 Sent you a Ceylon Arrack Sour cheers cocktail!', 'cocktail_cheers');
+      onSendMessage(selectedChatUser.id, language === 'si' ? '🍸 ඔබට විශේෂ Ceylon Arrack Sour කොක්ටේල් එකක් පිරිනමන ලදී!' : '🍸 Sent you a Ceylon Arrack Sour cheers cocktail!', 'cocktail_cheers');
     }
   };
 
@@ -129,14 +134,16 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
           <div className="p-4 border-b border-white/10 flex items-center justify-between">
             <div>
               <h2 className="font-bold text-white text-sm flex items-center gap-2">
-                <span>Direct Messages</span>
+                <span>{t.directMessages}</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </h2>
-              <p className="text-[11px] text-slate-400">Real-time Supabase Chat</p>
+              <p className="text-[11px] text-slate-400">
+                {language === 'si' ? 'සජීවී Supabase චැට් පද්ධතිය' : 'Real-time Supabase Chat'}
+              </p>
             </div>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-white sm:hidden"
+              className="p-1 rounded-lg text-slate-400 hover:text-white sm:hidden cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -147,7 +154,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
             <div className="p-3 border-b border-white/10 bg-[#17121C]">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF758F] mb-2 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
-                <span>Pending Love Requests ({incomingRequests.length})</span>
+                <span>{t.pendingLoveRequests} ({incomingRequests.length})</span>
               </p>
               <div className="space-y-2">
                 {incomingRequests.map((req) => {
@@ -162,14 +169,14 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => onRespondFriendRequest(req.id, 'accepted')}
-                          className="p-1.5 rounded-lg bg-[#E63946] text-white hover:bg-[#D90429]"
-                          title="Accept Love"
+                          className="p-1.5 rounded-lg bg-[#E63946] text-white hover:bg-[#D90429] cursor-pointer"
+                          title="Accept"
                         >
                           <Check className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => onRespondFriendRequest(req.id, 'declined')}
-                          className="p-1.5 rounded-lg bg-white/10 text-slate-400 hover:text-white"
+                          className="p-1.5 rounded-lg bg-white/10 text-slate-400 hover:text-white cursor-pointer"
                           title="Decline"
                         >
                           <X className="w-3 h-3" />
@@ -186,8 +193,10 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
           <div className="flex-1 overflow-y-auto no-scrollbar p-2 space-y-1">
             {conversationUsers.length === 0 ? (
               <div className="p-6 text-center text-slate-400 text-xs">
-                <p>No active chats yet.</p>
-                <p className="mt-1 text-[11px] text-slate-500">Swipe right in the Dating Stack to match with companions!</p>
+                <p>{language === 'si' ? 'සක්‍රීය චැට් කිසිවක් නැත.' : 'No active chats yet.'}</p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {language === 'si' ? 'සහකරුවන් සමග සම්බන්ධ වීමට ඩේටිං තට්ටුවේදී Like කරන්න!' : 'Swipe right in the Dating Stack to match with companions!'}
+                </p>
               </div>
             ) : (
               conversationUsers.map((u) => {
@@ -201,7 +210,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                   <button
                     key={u.id}
                     onClick={() => onSelectChatUser(u)}
-                    className={`w-full p-2.5 rounded-xl flex items-center gap-3 text-left transition-all ${
+                    className={`w-full p-2.5 rounded-xl flex items-center gap-3 text-left transition-all cursor-pointer ${
                       isSelected ? 'bg-[#E63946]/15 border border-[#E63946]/40' : 'hover:bg-white/5'
                     }`}
                   >
@@ -225,7 +234,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                        {lastMsg ? lastMsg.text : `${u.city} • ${u.lookingFor}`}
+                        {lastMsg ? lastMsg.text : `${SINHALA_CITIES[u.city]?.split(' ')[0] || u.city} • ${u.lookingFor}`}
                       </p>
                     </div>
                   </button>
@@ -257,7 +266,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                     </h3>
                     <p className="text-[11px] text-slate-400 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-[#E63946]" />
-                      <span>{selectedChatUser.city}</span>
+                      <span>{SINHALA_CITIES[selectedChatUser.city] || selectedChatUser.city}</span>
                       {selectedChatUser.companionRate && (
                         <>
                           <span>·</span>
@@ -270,7 +279,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
 
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white"
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -281,9 +290,9 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                 {currentMessages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
                     <Heart className="w-8 h-8 text-[#FF758F]" />
-                    <p className="text-sm font-semibold text-white">Start the conversation!</p>
+                    <p className="text-sm font-semibold text-white">{t.startConversation}</p>
                     <p className="text-xs max-w-xs text-slate-400">
-                      Say hello, invite {selectedChatUser.name} to tonight’s parties, or send a cheers cocktail.
+                      {t.startConversationDesc}
                     </p>
                   </div>
                 ) : (
@@ -327,7 +336,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                     <div className="w-6 h-6 rounded-full overflow-hidden">
                       <img src={selectedChatUser.avatarUrl} alt="" className="w-full h-full object-cover" />
                     </div>
-                    <span>{selectedChatUser.name} is typing...</span>
+                    <span>{selectedChatUser.name} {language === 'si' ? 'ටයිප් කරමින් සිටී...' : 'is typing...'}</span>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -337,18 +346,18 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
               <div className="px-4 py-2 border-t border-white/5 bg-[#121218] flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
                 <button
                   onClick={() => handleSendSpecial('party_invite')}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 flex items-center gap-1 whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 flex items-center gap-1 whitespace-nowrap cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 text-[#E63946]" />
-                  <span>Send Party Invite 🥂</span>
+                  <span>{t.sendPartyInvite}</span>
                 </button>
 
                 <button
                   onClick={() => handleSendSpecial('cocktail_cheers')}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 flex items-center gap-1 whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 flex items-center gap-1 whitespace-nowrap cursor-pointer"
                 >
                   <Wine className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Send Cheers 🍸</span>
+                  <span>{t.sendCheers}</span>
                 </button>
               </div>
 
@@ -356,7 +365,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
               <div className="p-3 sm:p-4 bg-[#14141B] border-t border-white/10 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder={`Message ${selectedChatUser.name}...`}
+                  placeholder={language === 'si' ? `${selectedChatUser.name} වෙත පණිවිඩයක් ලියන්න...` : `Message ${selectedChatUser.name}...`}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -365,7 +374,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
                 <button
                   onClick={handleSend}
                   disabled={!inputText.trim()}
-                  className="p-2.5 rounded-xl bg-[#E63946] hover:bg-[#D90429] disabled:opacity-40 text-white shadow-md shadow-[#E63946]/30 transition-transform active:scale-95"
+                  className="p-2.5 rounded-xl bg-[#E63946] hover:bg-[#D90429] disabled:opacity-40 text-white shadow-md shadow-[#E63946]/30 transition-transform active:scale-95 cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -376,9 +385,9 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
               <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-slate-300">
                 <Heart className="w-8 h-8 text-[#FF758F]" />
               </div>
-              <h3 className="font-bold text-white text-base">Select a conversation</h3>
+              <h3 className="font-bold text-white text-base">{t.selectConversationTitle}</h3>
               <p className="text-xs text-slate-400 max-w-sm">
-                Connect with party companions, VIP hosts, and singles across Colombo, Mirissa, and Weligama.
+                {t.selectConversationDesc}
               </p>
             </div>
           )}

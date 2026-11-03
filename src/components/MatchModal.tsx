@@ -1,6 +1,8 @@
 import React from 'react';
 import { UserProfile } from '../types';
 import { Sparkles, MessageCircle, Heart, X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { SINHALA_CITIES } from '../utils/translations';
 
 interface MatchModalProps {
   currentUser: UserProfile;
@@ -15,6 +17,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
   onClose,
   onStartChat,
 }) => {
+  const { t, language } = useLanguage();
   if (!matchedUser) return null;
 
   return (
@@ -28,7 +31,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
 
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 text-slate-400 hover:text-white transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -36,15 +39,17 @@ export const MatchModal: React.FC<MatchModalProps> = ({
         {/* Header celebration */}
         <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#E63946]/20 border border-[#E63946]/40 text-[#FF758F] text-xs font-bold tracking-wider uppercase mb-4">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Mutual Connection</span>
+          <span>{t.mutualConnection}</span>
         </div>
 
         <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
-          It's a Match! 🎉
+          {t.itsAMatch}
         </h2>
 
         <p className="text-slate-300 text-sm mb-6">
-          You and <span className="font-semibold text-[#FF758F]">{matchedUser.name}</span> have both shown love. Ready to meet tonight?
+          {language === 'si'
+            ? <>ඔබ සහ <span className="font-semibold text-[#FF758F]">{matchedUser.name}</span> දෙදෙනාම එකිනෙකාට කැමැත්ත පළ කර ඇත. අද රාත්‍රියේ හමුවෙමුද?</>
+            : <>You and <span className="font-semibold text-[#FF758F]">{matchedUser.name}</span> have both shown love. Ready to meet tonight?</>}
         </p>
 
         {/* Dual Avatars with Heart Pulse */}
@@ -73,7 +78,7 @@ export const MatchModal: React.FC<MatchModalProps> = ({
         {/* Companion notice if applicable */}
         {matchedUser.isCompanion && (
           <div className="mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200">
-            ✨ {matchedUser.name} is available as a verified party companion in {matchedUser.city}.
+            ✨ {matchedUser.name} {language === 'si' ? `${SINHALA_CITIES[matchedUser.city] ? SINHALA_CITIES[matchedUser.city].split(' ')[0] : matchedUser.city} හි සත්‍යාපිත පාටි සහකරුවෙකු ලෙස සූදානම්.` : `is available as a verified party companion in ${matchedUser.city}.`}
           </div>
         )}
 
@@ -84,17 +89,17 @@ export const MatchModal: React.FC<MatchModalProps> = ({
               onStartChat(matchedUser);
               onClose();
             }}
-            className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] hover:from-[#D90429] hover:to-[#B5001D] text-white font-bold text-sm shadow-xl shadow-[#E63946]/30 flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#E63946] to-[#D90429] hover:from-[#D90429] hover:to-[#B5001D] text-white font-bold text-sm shadow-xl shadow-[#E63946]/30 flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Say Ayubowan! 💬</span>
+            <span>{t.sayAyubowan}</span>
           </button>
 
           <button
             onClick={onClose}
-            className="w-full py-3 px-6 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs transition-colors"
+            className="w-full py-3 px-6 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs transition-colors cursor-pointer"
           >
-            Keep Swiping
+            {t.keepSwiping}
           </button>
         </div>
       </div>

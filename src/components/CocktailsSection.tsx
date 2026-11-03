@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CocktailItem } from '../types';
-import { Wine, MapPin, Sparkles, Flag, Plus } from 'lucide-react';
+import { Wine, MapPin, Sparkles, Flag } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CocktailsSectionProps {
   cocktails: CocktailItem[];
@@ -13,8 +14,14 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
   onReport,
   onOrderOrReserve,
 }) => {
+  const { t, language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const categories = ['All', 'Signature Cocktail', 'Tapas & Bites'];
+  
+  const categories = [
+    { key: 'All', label: language === 'si' ? 'සියල්ල' : 'All' },
+    { key: 'Signature Cocktail', label: language === 'si' ? 'සිග්නේචර් කොක්ටේල්' : 'Signature Cocktail' },
+    { key: 'Tapas & Bites', label: language === 'si' ? 'තපස් සහ බයිට්ස්' : 'Tapas & Bites' }
+  ];
 
   const filtered = selectedCategory === 'All' 
     ? cocktails 
@@ -25,10 +32,10 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            Signature Cocktails & Tapas <Wine className="w-5 h-5 text-amber-400" />
+            {t.cocktailsTitle} <Wine className="w-5 h-5 text-amber-400" />
           </h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Artisanal Ceylon arrack infusions, botanical mixology, and late-night tapas
+            {t.cocktailsSubtitle}
           </p>
         </div>
 
@@ -36,15 +43,15 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
         <div className="flex items-center gap-2">
           {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                selectedCategory === cat
+              key={cat.key}
+              onClick={() => setSelectedCategory(cat.key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                selectedCategory === cat.key
                   ? 'bg-amber-500 text-black shadow-md font-bold'
                   : 'bg-white/5 text-slate-300 hover:bg-white/10'
               }`}
             >
-              {cat}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -80,7 +87,9 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
                 }}
               />
               <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] text-amber-300 font-semibold border border-amber-400/20">
-                {item.category}
+                {language === 'si'
+                  ? item.category === 'Tapas & Bites' ? 'තපස් / බයිට්ස්' : 'සිග්නේචර් කොක්ටේල්'
+                  : item.category}
               </div>
             </div>
 
@@ -93,7 +102,7 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
                   </h3>
                   <div className="text-right shrink-0">
                     <span className="font-mono font-bold text-sm text-amber-300">
-                      LKR {item.priceLKR.toLocaleString()}
+                      {t.lkrPrice} {item.priceLKR.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -128,18 +137,18 @@ export const CocktailsSection: React.FC<CocktailsSectionProps> = ({
               <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
                 <button
                   onClick={() => onReport('cocktail', item.id, item.name)}
-                  className="text-[11px] text-slate-500 hover:text-slate-300 flex items-center gap-1"
+                  className="text-[11px] text-slate-500 hover:text-slate-300 flex items-center gap-1 cursor-pointer"
                 >
                   <Flag className="w-3 h-3" />
-                  <span>Report item</span>
+                  <span>{t.reportItem}</span>
                 </button>
 
                 <button
                   onClick={() => onOrderOrReserve && onOrderOrReserve(item)}
-                  className="py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="py-1.5 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>Venue Special</span>
+                  <span>{t.venueSpecial}</span>
                 </button>
               </div>
             </div>

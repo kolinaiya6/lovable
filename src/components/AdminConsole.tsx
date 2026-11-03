@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { storage } from '../services/storage';
 import { generateUUID } from '../utils/uuid';
+import { useLanguage } from '../context/LanguageContext';
 
 interface AdminConsoleProps {
   currentUser: UserProfile;
@@ -77,6 +78,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
   onDismissReport,
   onResolveReport,
 }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'metrics' | 'users' | 'parties' | 'cocktails' | 'moderation' | 'sql'>('metrics');
   const [userSearch, setUserSearch] = useState('');
   const [eventSearch, setEventSearch] = useState('');
@@ -482,24 +484,26 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
               <Shield className="w-3.5 h-3.5" />
-              <span>Super-Admin Central Command</span>
+              <span>{language === 'si' ? 'සුපිරි ඇඩ්මින් පාලන මධ්‍යස්ථානය' : 'Super-Admin Central Command'}</span>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-            Lovable LK Master Operations Hub
+            {language === 'si' ? 'ලවබල් LK ප්‍රධාන මෙහෙයුම් පුවරුව' : 'Lovable LK Master Operations Hub'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
-            Full user CRUD management, party guestlists, signature cocktails & Supabase PostgreSQL infrastructure
+            {language === 'si'
+              ? 'සාමාජික CRUD කළමනාකරණය, පාටි ඉවෙන්ට්ස්, කොක්ටේල් මෙනු සහ Supabase PostgreSQL දත්ත සමුදාය'
+              : 'Full user CRUD management, party guestlists, signature cocktails & Supabase PostgreSQL infrastructure'}
           </p>
         </div>
 
         {/* Copy SQL Schema CTA */}
         <button
           onClick={handleCopySQL}
-          className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold flex items-center gap-2 transition-all self-start sm:self-auto"
+          className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white text-xs font-bold flex items-center gap-2 transition-all self-start sm:self-auto cursor-pointer"
         >
           <Database className="w-4 h-4 text-[#FF758F]" />
-          <span>{sqlCopied ? 'Schema Copied to Clipboard!' : 'Copy Supabase SQL'}</span>
+          <span>{sqlCopied ? (language === 'si' ? 'SQL පිටපත් විය!' : 'Schema Copied to Clipboard!') : (language === 'si' ? 'Supabase SQL කොපි කරන්න' : 'Copy Supabase SQL')}</span>
         </button>
       </div>
 
@@ -507,66 +511,66 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       <div className="flex items-center gap-2 border-b border-white/10 pb-3 mb-6 overflow-x-auto no-scrollbar text-xs font-bold">
         <button
           onClick={() => setActiveTab('metrics')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'metrics'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
-          Overview Metrics
+          {language === 'si' ? 'සාරාංශ මිතික' : 'Overview Metrics'}
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'users'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          <span>Users CRUD ({users.length})</span>
+          <span>{language === 'si' ? `සාමාජිකයින් (${users.length})` : `Users CRUD (${users.length})`}</span>
         </button>
         <button
           onClick={() => setActiveTab('parties')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'parties'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <Calendar className="w-3.5 h-3.5" />
-          <span>Parties & Events ({events.length})</span>
+          <span>{language === 'si' ? `පාටි සහ ඉවෙන්ට්ස් (${events.length})` : `Parties & Events (${events.length})`}</span>
         </button>
         <button
           onClick={() => setActiveTab('cocktails')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'cocktails'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <Wine className="w-3.5 h-3.5" />
-          <span>Cocktails & Tapas ({cocktails.length})</span>
+          <span>{language === 'si' ? `කොක්ටේල් සහ තපස් (${cocktails.length})` : `Cocktails & Tapas (${cocktails.length})`}</span>
         </button>
         <button
           onClick={() => setActiveTab('moderation')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'moderation'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
-          Content Moderation ({pendingReportsCount})
+          {language === 'si' ? `අන්තර්ගත පාලනය (${pendingReportsCount})` : `Content Moderation (${pendingReportsCount})`}
         </button>
         <button
           onClick={() => setActiveTab('sql')}
-          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'sql'
               ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
-          Database SQL Viewer
+          {language === 'si' ? 'Supabase SQL කේතය' : 'Database SQL Viewer'}
         </button>
       </div>
 
