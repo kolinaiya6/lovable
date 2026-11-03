@@ -75,11 +75,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
     imageUrl: '',
   });
 
-  // Calculate subscription status & access
+  // Calculate subscription status & access: Strictly active only if paid or super admin
   const currentExpiryStr = currentUser.subscriptionExpiresAt || currentUser.trialEndsAt;
-  const trialEnds = currentExpiryStr ? new Date(currentExpiryStr) : new Date(Date.now() + 28 * 24 * 3600 * 1000);
-  const diffDays = Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-  const isSubscriptionActive = currentUser.role === 'admin' || diffDays > 0;
+  const trialEnds = currentExpiryStr ? new Date(currentExpiryStr) : null;
+  const isDateValid = trialEnds !== null && !isNaN(trialEnds.getTime()) && trialEnds.getTime() > Date.now();
+  const diffDays = isDateValid ? Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+  const isSubscriptionActive = currentUser.role === 'admin' || (isDateValid && currentUser.subscriptionStatus === 'active');
 
   const vendorEvents = events.filter(e => e.vendorId === currentUser.id || currentUser.role === 'admin' || e.vendorId === 'vendor_botanik');
   const vendorCocktails = cocktails.filter(c => c.vendorId === currentUser.id || currentUser.role === 'admin' || c.vendorId === 'vendor_botanik');
