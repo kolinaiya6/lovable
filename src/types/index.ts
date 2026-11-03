@@ -169,9 +169,11 @@ export interface VendorPayment {
   id: string;
   vendorId: string;
   amountLKR: number;
+  amountUSD?: number;
   plan: string;
-  paymentGateway: 'PAYHERE' | 'PAYPAL';
+  paymentGateway: 'PAYPAL' | 'PAYHERE';
   gatewayOrderId: string;
+  paypalOrderId?: string;
   status: 'COMPLETED' | 'PENDING' | 'FAILED';
   createdAt: string;
   validUntil: string;

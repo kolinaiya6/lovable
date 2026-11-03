@@ -15,7 +15,7 @@ import {
   Copy,
   Download
 } from 'lucide-react';
-import { PayHereSubscription } from './PayHereSubscription';
+import { PayPalSubscription } from './PayPalSubscription';
 import { generateUUID } from '../utils/uuid';
 import { useLanguage } from '../context/LanguageContext';
 import { SINHALA_CITIES } from '../utils/translations';
@@ -29,7 +29,7 @@ interface VendorPortalProps {
   onDeleteEvent: (id: string) => void;
   onAddCocktail: (cocktail: CocktailItem) => void;
   onDeleteCocktail: (id: string) => void;
-  onPayVendorPass: (gatewayOrderId: string, gateway: 'PAYHERE' | 'PAYPAL', monthsCount?: number, amountLKR?: number) => void;
+  onPayVendorPass: (gatewayOrderId: string, gateway: 'PAYPAL', monthsCount?: number, amountUSD?: number) => void;
   onSwitchToVendorRole: () => void;
 }
 
@@ -250,10 +250,10 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             </div>
             <button
               onClick={() => setShowPaymentModal(true)}
-              className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all hover:scale-105 cursor-pointer"
+              className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-[#0070BA] to-[#003087] hover:brightness-110 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-[#0070BA]/20 transition-all hover:scale-105 cursor-pointer"
             >
               <CreditCard className="w-3.5 h-3.5" />
-              <span>{isSubscriptionActive ? t.addMonthPayHere : t.renewPayHere}</span>
+              <span>{isSubscriptionActive ? '+ Add Month ($16.50 PayPal)' : 'Renew with PayPal ($16.50)'}</span>
             </button>
           </div>
         </div>
@@ -289,12 +289,12 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
           onClick={() => setActiveTab('subscription')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'subscription'
-              ? 'bg-[#E63946] text-white shadow-lg shadow-[#E63946]/20'
+              ? 'bg-[#0070BA] text-white shadow-lg shadow-[#0070BA]/20'
               : 'bg-white/5 text-slate-300 hover:bg-white/10'
           }`}
         >
           <CreditCard className="w-4 h-4" />
-          <span>{t.payhereTab}</span>
+          <span>PayPal Subscription ($16.50)</span>
         </button>
       </div>
 
@@ -306,17 +306,17 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white">{t.lockedAlertTitle}</p>
+              <p className="text-xs font-bold text-white">Party Publishing Pass Inactive</p>
               <p className="text-[11px] text-slate-300">
-                {t.lockedAlertDesc}
+                To publish unlimited party events and cocktails, activate your monthly vendor pass with PayPal ($16.50 USD / month).
               </p>
             </div>
           </div>
           <button
             onClick={() => setShowPaymentModal(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#E63946] to-[#FF758F] text-white text-xs font-bold whitespace-nowrap shadow-md shadow-[#E63946]/20 hover:scale-105 transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0070BA] to-[#003087] text-white text-xs font-bold whitespace-nowrap shadow-md shadow-[#0070BA]/20 hover:scale-105 transition-all cursor-pointer"
           >
-            {t.addMonthPayHere}
+            Renew with PayPal ($16.50)
           </button>
         </div>
       )}
@@ -440,9 +440,9 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
         </div>
       )}
 
-      {/* TAB 3: SUBSCRIPTION & PAYHERE PASS */}
+      {/* TAB 3: SUBSCRIPTION & PAYPAL PASS */}
       {activeTab === 'subscription' && (
-        <PayHereSubscription
+        <PayPalSubscription
           vendorId={currentUser.id}
           vendorName={currentUser.name}
           vendorEmail={currentUser.email}
@@ -873,7 +873,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
         </div>
       )}
 
-      {/* MODAL: PAYPAL & PAYHERE SUBSCRIPTION CHECKOUT */}
+      {/* MODAL: PAYPAL SUBSCRIPTION CHECKOUT */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto no-scrollbar">
@@ -883,7 +883,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
             >
               <X className="w-5 h-5" />
             </button>
-            <PayHereSubscription
+            <PayPalSubscription
               vendorId={currentUser.id}
               vendorName={currentUser.name}
               vendorEmail={currentUser.email}

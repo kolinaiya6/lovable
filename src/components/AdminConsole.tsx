@@ -663,17 +663,15 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   {payments.map((p) => (
                     <tr key={p.id}>
                       <td className="py-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          p.paymentGateway === 'PAYHERE'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-[#FFC439]/20 text-[#FFC439] border border-[#FFC439]/30'
-                        }`}>
-                          {p.paymentGateway || 'PAYHERE'}
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0070BA]/20 text-[#4CC9F0] border border-[#0070BA]/30">
+                          {p.paymentGateway || 'PAYPAL'}
                         </span>
                       </td>
                       <td className="py-3 text-slate-300 font-semibold">{p.gatewayOrderId}</td>
                       <td className="py-3 text-slate-400">{p.vendorId}</td>
-                      <td className="py-3 text-emerald-400 font-bold">LKR {p.amountLKR.toLocaleString()}</td>
+                      <td className="py-3 text-emerald-400 font-bold">
+                        {p.amountUSD ? `$${p.amountUSD.toFixed(2)} USD` : `LKR ${p.amountLKR.toLocaleString()}`}
+                      </td>
                       <td className="py-3">
                         <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
                           {p.status}

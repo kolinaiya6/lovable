@@ -1219,9 +1219,9 @@ class StorageService {
   public recordVendorPayment(
     vendorId: string, 
     gatewayOrderId: string, 
-    paymentGateway: 'PAYHERE' | 'PAYPAL' = 'PAYHERE',
+    paymentGateway: 'PAYPAL' | 'PAYHERE' = 'PAYPAL',
     monthsCount: number = 1,
-    amountLKR: number = 5000
+    amountUSD: number = 16.50
   ) {
     const list = this.getPayments();
     const user = this.getUsers().find(u => u.id === vendorId);
@@ -1238,14 +1238,17 @@ class StorageService {
 
     const daysToAdd = monthsCount * 30;
     const validUntil = new Date(baseTime + daysToAdd * 24 * 3600 * 1000).toISOString();
+    const approxLKR = Math.round(amountUSD * 305);
 
     const payment: VendorPayment = {
       id: generateUUID(),
       vendorId,
-      amountLKR,
-      plan: `${monthsCount} Month Party Pass`,
-      paymentGateway,
+      amountLKR: approxLKR,
+      amountUSD: amountUSD,
+      plan: `${monthsCount} Month Party Pass (PayPal)`,
+      paymentGateway: 'PAYPAL',
       gatewayOrderId,
+      paypalOrderId: gatewayOrderId,
       status: 'COMPLETED',
       createdAt: new Date().toISOString(),
       validUntil,
@@ -1278,8 +1281,8 @@ class StorageService {
       id: generateUUID(),
       userId: vendorId,
       type: 'vip_announcement',
-      title: '🎉 PayHere Subscription Activated!',
-      message: `Your party publishing pass has been renewed for ${monthsCount} month(s) (valid until ${expiryFormatted}). You can now create unlimited party events, raves & cocktails.`,
+      title: '🎉 PayPal Subscription Activated!',
+      message: `Your VIP publisher pass has been renewed via PayPal for ${monthsCount} month(s) (${monthsCount * 30} days, valid until ${expiryFormatted}). You can now create unlimited party events, raves & cocktails.`,
       isRead: false,
       createdAt: new Date().toISOString()
     });
@@ -1293,11 +1296,16 @@ class StorageService {
           id: payment.id,
           vendor_id: vendorId,
           amount_lkr: payment.amountLKR,
+          amount_usd: payment.amountUSD,
+          currency: 'USD',
           plan: payment.plan,
-          payment_gateway: payment.paymentGateway,
+          payment_gateway: 'PAYPAL',
           gateway_order_id: payment.gatewayOrderId,
+          paypal_order_id: payment.gatewayOrderId,
+          paypal_capture_id: payment.gatewayOrderId,
           status: payment.status,
           valid_until: payment.validUntil,
+          months_added: monthsCount,
           created_at: payment.createdAt,
         })
     );

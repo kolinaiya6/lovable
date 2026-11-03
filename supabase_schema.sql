@@ -2,7 +2,9 @@
 -- LOVABLE LK (loveablelk) — SRI LANKA NIGHTLIFE, DATING & COMPANION PLATFORM
 -- COMPLETE PRODUCTION SUPABASE POSTGRESQL SCHEMA WITH AUTH, RLS, STORAGE & REALTIME
 -- Target Project URL: https://gmtzbwgbgodrfzvmlimd.supabase.co
--- Integration: PayHere (Sri Lanka LKR) & PayPal (loveablelk App ID: BAAODoQ_pB0IEsLcrGCgzPUP3l7JYmzIBeKzdFJGuO4kln0otkP_MPJtValS7AxgUZ3f4wFCR-uyD_xNoc)
+-- Official PayPal Integration: App Name: loveablelk
+-- PayPal Client ID: BAAODoQ_pB0IEsLcrGCgzPUP3l7JYmzIBeKzdFJGuO4kln0otkP_MPJtValS7AxgUZ3f4wFCR-uyD_xNoc
+-- Pricing: $16.50 USD / Month (Unlimited Nightlife Parties, Guestlists & Cocktails)
 --
 -- Instructions:
 -- 1. Open your Supabase Dashboard: https://supabase.com/dashboard/project/gmtzbwgbgodrfzvmlimd/sql
@@ -215,22 +217,21 @@ CREATE TABLE IF NOT EXISTS public.reports (
 );
 
 -- ==============================================================================
--- 11. PAYMENTS LEDGER (Supports both PAYPAL & PAYHERE Gateways)
+-- 11. PAYMENTS LEDGER (Official PayPal Integration for loveablelk)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vendor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+  amount_usd NUMERIC NOT NULL DEFAULT 16.50,
   amount_lkr NUMERIC NOT NULL DEFAULT 5000,
-  amount_usd NUMERIC DEFAULT 16.50,
-  currency TEXT NOT NULL DEFAULT 'LKR',
-  plan TEXT NOT NULL DEFAULT 'Monthly Vendor Pass',
-  payment_gateway TEXT NOT NULL DEFAULT 'PAYPAL' CHECK (payment_gateway IN ('PAYHERE', 'PAYPAL')),
+  currency TEXT NOT NULL DEFAULT 'USD',
+  plan TEXT NOT NULL DEFAULT '1 Month VIP Vendor Pass',
+  payment_gateway TEXT NOT NULL DEFAULT 'PAYPAL' CHECK (payment_gateway IN ('PAYPAL', 'PAYHERE')),
   gateway_order_id TEXT NOT NULL,
   paypal_order_id TEXT,
   paypal_capture_id TEXT,
   paypal_payer_id TEXT,
-  payhere_payment_id TEXT,
-  md5_sig TEXT,
+  paypal_payer_email TEXT,
   status TEXT NOT NULL DEFAULT 'COMPLETED',
   valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
   months_added INTEGER DEFAULT 1,
@@ -244,7 +245,7 @@ BEGIN
     ALTER TABLE public.payments ADD COLUMN amount_usd NUMERIC DEFAULT 16.50;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'currency') THEN
-    ALTER TABLE public.payments ADD COLUMN currency TEXT DEFAULT 'LKR';
+    ALTER TABLE public.payments ADD COLUMN currency TEXT DEFAULT 'USD';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_order_id') THEN
     ALTER TABLE public.payments ADD COLUMN paypal_order_id TEXT;
@@ -255,14 +256,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_payer_id') THEN
     ALTER TABLE public.payments ADD COLUMN paypal_payer_id TEXT;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_payer_email') THEN
+    ALTER TABLE public.payments ADD COLUMN paypal_payer_email TEXT;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'months_added') THEN
     ALTER TABLE public.payments ADD COLUMN months_added INTEGER DEFAULT 1;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'payhere_payment_id') THEN
-    ALTER TABLE public.payments ADD COLUMN payhere_payment_id TEXT;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'md5_sig') THEN
-    ALTER TABLE public.payments ADD COLUMN md5_sig TEXT;
   END IF;
 EXCEPTION
   WHEN OTHERS THEN NULL;
