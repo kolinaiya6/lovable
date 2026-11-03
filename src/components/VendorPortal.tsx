@@ -10,12 +10,16 @@ import {
   Check, 
   X,
   Upload,
-  AlertTriangle
+  AlertTriangle,
+  Database,
+  Copy,
+  Download
 } from 'lucide-react';
 import { PayHereSubscription } from './PayHereSubscription';
 import { generateUUID } from '../utils/uuid';
 import { useLanguage } from '../context/LanguageContext';
 import { SINHALA_CITIES } from '../utils/translations';
+import { storage } from '../services/storage';
 
 interface VendorPortalProps {
   currentUser: UserProfile;
@@ -45,6 +49,24 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
   const [showEventModal, setShowEventModal] = useState(false);
   const [showCocktailModal, setShowCocktailModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [sqlCopied, setSqlCopied] = useState(false);
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(storage.getSupabaseSQLSchema());
+    setSqlCopied(true);
+    setTimeout(() => setSqlCopied(false), 2000);
+  };
+
+  const handleDownloadSql = () => {
+    const element = document.createElement('a');
+    const file = new Blob([storage.getSupabaseSQLSchema()], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'supabase_schema.sql';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
 
   // New Event form state
   const [newEvent, setNewEvent] = useState({
@@ -206,8 +228,17 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
           </p>
         </div>
 
-        {/* 30-Day Pass Status & PayHere CTA */}
-        <div className="flex items-center gap-3">
+        {/* 30-Day Pass Status, Supabase SQL Script & Payment CTA */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setShowSqlModal(true)}
+            className="py-2.5 px-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            title="View or copy Complete Production Supabase SQL script"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Supabase SQL</span>
+          </button>
+
           <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3">
             <div className="text-right">
               <p className="text-[10px] text-slate-400 font-semibold uppercase">{language === 'si' ? 'පාටි පළකිරීමේ අවසරය' : 'Party Publishing Pass'}</p>
@@ -842,7 +873,7 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
         </div>
       )}
 
-      {/* MODAL: PAYHERE SUBSCRIPTION CHECKOUT (LKR 5,000 / month) */}
+      {/* MODAL: PAYPAL & PAYHERE SUBSCRIPTION CHECKOUT */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto no-scrollbar">
@@ -861,6 +892,74 @@ export const VendorPortal: React.FC<VendorPortalProps> = ({
                 setTimeout(() => setShowPaymentModal(false), 2000);
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: COMPLETE PRODUCTION SUPABASE SQL SCRIPT */}
+      {showSqlModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-4xl bg-[#14141E] border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-white text-base sm:text-lg">
+                    Complete Production Supabase PostgreSQL Script
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Target: <code className="text-emerald-300">gmtzbwgbgodrfzvmlimd.supabase.co</code> • Tables, Auth, RLS, Storage &amp; Seed Accounts
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDownloadSql}
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  title="Download .sql file"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Download .sql</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopySql}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer"
+                >
+                  {sqlCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{sqlCopied ? 'Copied to Clipboard!' : 'Copy Entire SQL'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSqlModal(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-black/60 border border-white/10 text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shrink-0">
+              <span className="text-[11px]">
+                To apply: Open <a href="https://supabase.com/dashboard/project/gmtzbwgbgodrfzvmlimd/sql" target="_blank" rel="noreferrer" className="text-emerald-300 underline font-semibold">Supabase SQL Editor</a>, click <strong>"New Query"</strong>, paste this script, and click <strong>"Run"</strong>.
+              </span>
+              <a
+                href="https://supabase.com/dashboard/project/gmtzbwgbgodrfzvmlimd/sql"
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-[11px] hover:bg-emerald-500/30 shrink-0"
+              >
+                Open Supabase Dashboard &rarr;
+              </a>
+            </div>
+
+            <pre className="flex-1 p-4 rounded-2xl bg-black border border-white/10 text-[11px] font-mono text-emerald-400 overflow-auto no-scrollbar select-all">
+              {storage.getSupabaseSQLSchema()}
+            </pre>
           </div>
         </div>
       )}

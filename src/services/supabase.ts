@@ -205,25 +205,45 @@ CREATE TABLE IF NOT EXISTS public.reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 11. PAYHERE & PAYPAL PAYMENTS LEDGER (Monthly Vendor Passes)
+-- 11. PAYMENTS LEDGER (Supports both PAYPAL & PAYHERE Gateways)
 CREATE TABLE IF NOT EXISTS public.payments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vendor_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   amount_lkr NUMERIC NOT NULL DEFAULT 5000,
+  amount_usd NUMERIC DEFAULT 16.50,
+  currency TEXT NOT NULL DEFAULT 'LKR',
   plan TEXT NOT NULL DEFAULT 'Monthly Vendor Pass',
-  payment_gateway TEXT NOT NULL DEFAULT 'PAYHERE' CHECK (payment_gateway IN ('PAYHERE', 'PAYPAL')),
+  payment_gateway TEXT NOT NULL DEFAULT 'PAYPAL' CHECK (payment_gateway IN ('PAYHERE', 'PAYPAL')),
   gateway_order_id TEXT NOT NULL,
+  paypal_order_id TEXT,
+  paypal_capture_id TEXT,
+  paypal_payer_id TEXT,
+  payhere_payment_id TEXT,
+  md5_sig TEXT,
   status TEXT NOT NULL DEFAULT 'COMPLETED',
   valid_until TIMESTAMP WITH TIME ZONE NOT NULL,
   months_added INTEGER DEFAULT 1,
-  payhere_payment_id TEXT,
-  md5_sig TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Safely ensure columns exist on payments if table already created
 DO $$
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'amount_usd') THEN
+    ALTER TABLE public.payments ADD COLUMN amount_usd NUMERIC DEFAULT 16.50;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'currency') THEN
+    ALTER TABLE public.payments ADD COLUMN currency TEXT DEFAULT 'LKR';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_order_id') THEN
+    ALTER TABLE public.payments ADD COLUMN paypal_order_id TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_capture_id') THEN
+    ALTER TABLE public.payments ADD COLUMN paypal_capture_id TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'paypal_payer_id') THEN
+    ALTER TABLE public.payments ADD COLUMN paypal_payer_id TEXT;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'payments' AND column_name = 'months_added') THEN
     ALTER TABLE public.payments ADD COLUMN months_added INTEGER DEFAULT 1;
   END IF;
@@ -247,14 +267,17 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
 );
 
 -- ==============================================================================
--- PAYHERE SUBSCRIPTION ACTIVATION FUNCTION
--- Extends vendor subscription access by N months (30 days per month)
+-- UNIFIED VENDOR SUBSCRIPTION ACTIVATION (PAYPAL & PAYHERE)
 -- ==============================================================================
-CREATE OR REPLACE FUNCTION public.activate_payhere_subscription(
+CREATE OR REPLACE FUNCTION public.activate_vendor_subscription(
   p_vendor_id UUID,
   p_order_id TEXT,
+  p_gateway TEXT DEFAULT 'PAYPAL',
   p_amount NUMERIC DEFAULT 5000,
   p_months INTEGER DEFAULT 1,
+  p_currency TEXT DEFAULT 'USD',
+  p_paypal_capture_id TEXT DEFAULT NULL,
+  p_paypal_payer_id TEXT DEFAULT NULL,
   p_payhere_payment_id TEXT DEFAULT NULL,
   p_md5_sig TEXT DEFAULT NULL
 )
@@ -268,53 +291,65 @@ DECLARE
   v_base_time TIMESTAMP WITH TIME ZONE;
   v_new_expiry TIMESTAMP WITH TIME ZONE;
   v_payment_id UUID := uuid_generate_v4();
+  v_amount_usd NUMERIC;
+  v_amount_lkr NUMERIC;
 BEGIN
-  -- 1. Fetch current vendor subscription status
+  IF UPPER(p_gateway) = 'PAYPAL' THEN
+    v_amount_usd := COALESCE(p_amount, 16.50);
+    v_amount_lkr := v_amount_usd * 300;
+  ELSE
+    v_amount_lkr := COALESCE(p_amount, 5000);
+    v_amount_usd := ROUND(v_amount_lkr / 300, 2);
+  END IF;
+
   SELECT COALESCE(subscription_expires_at, trial_ends_at, NOW())
   INTO v_current_expiry
   FROM public.profiles
   WHERE id = p_vendor_id;
 
-  -- 2. Base time is either existing future expiration date or NOW()
   IF v_current_expiry IS NOT NULL AND v_current_expiry > NOW() THEN
     v_base_time := v_current_expiry;
   ELSE
     v_base_time := NOW();
   END IF;
 
-  -- 3. Calculate new expiry (+ N months, 30 days per month)
   v_new_expiry := v_base_time + (COALESCE(p_months, 1) * INTERVAL '30 days');
 
-  -- 4. Update vendor profile with extended subscription
   UPDATE public.profiles
   SET 
     subscription_status = 'active',
     subscription_expires_at = v_new_expiry,
     trial_ends_at = v_new_expiry,
     subscription_tier = 'Monthly Vendor Pass',
+    preferred_gateway = UPPER(p_gateway),
     updated_at = NOW()
   WHERE id = p_vendor_id;
 
-  -- 5. Record payment in payments ledger
   INSERT INTO public.payments (
-    id, vendor_id, amount_lkr, plan, payment_gateway, gateway_order_id, status, valid_until, months_added, payhere_payment_id, md5_sig, created_at
+    id, vendor_id, amount_lkr, amount_usd, currency, plan, payment_gateway,
+    gateway_order_id, paypal_order_id, paypal_capture_id, paypal_payer_id,
+    payhere_payment_id, md5_sig, status, valid_until, months_added, created_at
   )
   VALUES (
     v_payment_id,
     p_vendor_id,
-    COALESCE(p_amount, 5000),
+    v_amount_lkr,
+    v_amount_usd,
+    COALESCE(p_currency, CASE WHEN UPPER(p_gateway) = 'PAYPAL' THEN 'USD' ELSE 'LKR' END),
     COALESCE(p_months, 1) || ' Month Party Pass',
-    'PAYHERE',
+    UPPER(p_gateway),
     p_order_id,
+    CASE WHEN UPPER(p_gateway) = 'PAYPAL' THEN p_order_id ELSE NULL END,
+    p_paypal_capture_id,
+    p_paypal_payer_id,
+    p_payhere_payment_id,
+    p_md5_sig,
     'COMPLETED',
     v_new_expiry,
     COALESCE(p_months, 1),
-    p_payhere_payment_id,
-    p_md5_sig,
     NOW()
   );
 
-  -- 6. Insert notification for vendor
   INSERT INTO public.notifications (
     id, user_id, type, title, message, is_read, created_at
   )
@@ -322,7 +357,10 @@ BEGIN
     uuid_generate_v4(),
     p_vendor_id,
     'vip_announcement',
-    '🎉 PayHere Subscription Activated!',
+    CASE 
+      WHEN UPPER(p_gateway) = 'PAYPAL' THEN '🎉 PayPal Vendor Pass Activated!'
+      ELSE '🎉 PayHere Vendor Pass Activated!'
+    END,
     'Your party publishing pass has been renewed for ' || COALESCE(p_months, 1) || ' month(s). You can now create unlimited party events and manage cocktails until ' || to_char(v_new_expiry, 'YYYY-MM-DD') || '.',
     false,
     NOW()
@@ -331,6 +369,7 @@ BEGIN
   RETURN jsonb_build_object(
     'status', 'success',
     'payment_id', v_payment_id,
+    'gateway', UPPER(p_gateway),
     'order_id', p_order_id,
     'months_added', COALESCE(p_months, 1),
     'valid_until', v_new_expiry
@@ -341,6 +380,34 @@ EXCEPTION
       'status', 'error',
       'message', SQLERRM
     );
+END;
+-- Backward-compatible alias for PayHere
+CREATE OR REPLACE FUNCTION public.activate_payhere_subscription(
+  p_vendor_id UUID,
+  p_order_id TEXT,
+  p_amount NUMERIC DEFAULT 5000,
+  p_months INTEGER DEFAULT 1,
+  p_payhere_payment_id TEXT DEFAULT NULL,
+  p_md5_sig TEXT DEFAULT NULL
+)
+RETURNS JSONB
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN public.activate_vendor_subscription(
+    p_vendor_id,
+    p_order_id,
+    'PAYHERE',
+    p_amount,
+    p_months,
+    'LKR',
+    NULL,
+    NULL,
+    p_payhere_payment_id,
+    p_md5_sig
+  );
 END;
 $$;
 
