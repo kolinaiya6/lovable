@@ -11,9 +11,9 @@ interface PayHereSubscriptionProps {
   monthlyAmountLKR?: number;
 }
 
-// Default Sandbox Test Credentials from PayHere Sri Lanka
-const DEFAULT_SANDBOX_MERCHANT_ID = '1211149';
-const DEFAULT_SANDBOX_SECRET = '4OJ3X2Z1T4G19V1Y5M2W3K5L4';
+// User PayHere App Credentials
+const PAYHERE_APP_ID = '4OVzEvzVxEe4JH5Y5Efhlp3D5';
+const PAYHERE_APP_SECRET = '8MQpgjOPilu4pBwoO7aCgt4ZBYJshChIA8LV4Ehs6OQt';
 
 export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   vendorId,
@@ -31,9 +31,9 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   const [copiedDomain, setCopiedDomain] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
-  // Merchant Credentials (defaults to official PayHere Sandbox credentials or user custom)
-  const [merchantId, setMerchantId] = useState(DEFAULT_SANDBOX_MERCHANT_ID);
-  const [merchantSecret, setMerchantSecret] = useState(DEFAULT_SANDBOX_SECRET);
+  // Merchant Credentials (defaults to user PayHere App ID and Secret)
+  const [merchantId, setMerchantId] = useState(PAYHERE_APP_ID);
+  const [merchantSecret, setMerchantSecret] = useState(PAYHERE_APP_SECRET);
 
   const formRef = useRef<HTMLFormElement>(null);
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -316,25 +316,25 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    Merchant ID:
+                    App ID / Merchant ID:
                   </label>
                   <input
                     type="text"
                     value={merchantId}
                     onChange={(e) => setMerchantId(e.target.value)}
-                    placeholder="1211149"
+                    placeholder="PayHere App ID / Merchant ID"
                     className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono text-xs focus:outline-none focus:border-[#E63946]"
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    Merchant Secret:
+                    App Secret / Merchant Secret:
                   </label>
                   <input
                     type="password"
                     value={merchantSecret}
                     onChange={(e) => setMerchantSecret(e.target.value)}
-                    placeholder="PayHere Merchant Secret"
+                    placeholder="PayHere App Secret"
                     className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono text-xs focus:outline-none focus:border-[#E63946]"
                   />
                 </div>
