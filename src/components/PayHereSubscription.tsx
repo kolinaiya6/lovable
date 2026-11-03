@@ -11,9 +11,22 @@ interface PayHereSubscriptionProps {
   monthlyAmountLKR?: number;
 }
 
-// User PayHere App Credentials & Pay Button ID
-const PAYHERE_APP_ID = '4OVzEvzVxEe4JH5Y5Efhlp3D5';
-const PAYHERE_APP_SECRET = '8MQpgjOPilu4pBwoO7aCgt4ZBYJshChIA8LV4Ehs6OQt';
+// User PayHere App Credentials (Configured by User for Domains)
+const PAYHERE_KEYS = {
+  // lovablelk web (for Netlify: https://lovablelk.netlify.app)
+  lovablelk_web: {
+    name: 'lovablelk web (Netlify)',
+    appId: '4OVzEvzWmNk4JH5Y5Efhlp3D5',
+    appSecret: '8MPY4VC1Wn08cL3isjbpXl8MNE8ua9a3V8n0P0E8baAZ',
+  },
+  // lovable domain
+  lovable_domain: {
+    name: 'lovable domain',
+    appId: '4OVzEvzWEHg4JH5Y5Efhlp3D5',
+    appSecret: '4JG3rAEe44B4aBR6eH1pI38bIahXG9U9q8Rh1Iafuzf1',
+  },
+};
+
 const PAYHERE_BUTTON_PAY_ID = 'o92898f1a';
 const PAYHERE_SANDBOX_CHECKOUT_URL = `https://sandbox.payhere.lk/pay/${PAYHERE_BUTTON_PAY_ID}`;
 
@@ -33,10 +46,11 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
   const [copiedDomain, setCopiedDomain] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [showPopupBrowserModal, setShowPopupBrowserModal] = useState(false);
+  const [selectedKeyProfile, setSelectedKeyProfile] = useState<'lovablelk_web' | 'lovable_domain'>('lovablelk_web');
 
-  // Merchant Credentials (defaults to user PayHere App ID and Secret)
-  const [merchantId, setMerchantId] = useState(PAYHERE_APP_ID);
-  const [merchantSecret, setMerchantSecret] = useState(PAYHERE_APP_SECRET);
+  // Active Merchant Credentials (defaults to user PayHere lovablelk web key)
+  const [merchantId, setMerchantId] = useState(PAYHERE_KEYS.lovablelk_web.appId);
+  const [merchantSecret, setMerchantSecret] = useState(PAYHERE_KEYS.lovablelk_web.appSecret);
 
   const formRef = useRef<HTMLFormElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -286,31 +300,63 @@ export const PayHereSubscription: React.FC<PayHereSubscriptionProps> = ({
           {/* Optional Custom Merchant Credentials */}
           {showConfig && (
             <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3 text-xs animate-in fade-in">
-              <h4 className="font-bold text-white flex items-center gap-1.5">
-                <Settings className="w-4 h-4 text-[#FF758F]" />
-                <span>PayHere Merchant Credentials</span>
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-white flex items-center gap-1.5">
+                  <Settings className="w-4 h-4 text-[#FF758F]" />
+                  <span>Configured PayHere Domain API Keys</span>
+                </h4>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedKeyProfile('lovablelk_web');
+                      setMerchantId(PAYHERE_KEYS.lovablelk_web.appId);
+                      setMerchantSecret(PAYHERE_KEYS.lovablelk_web.appSecret);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                      selectedKeyProfile === 'lovablelk_web'
+                        ? 'bg-[#E63946] text-white shadow'
+                        : 'bg-white/10 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    lovablelk web (Netlify)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedKeyProfile('lovable_domain');
+                      setMerchantId(PAYHERE_KEYS.lovable_domain.appId);
+                      setMerchantSecret(PAYHERE_KEYS.lovable_domain.appSecret);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                      selectedKeyProfile === 'lovable_domain'
+                        ? 'bg-[#E63946] text-white shadow'
+                        : 'bg-white/10 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    lovable domain
+                  </button>
+                </div>
+              </div>
               <p className="text-[11px] text-slate-400">
-                {language === 'si'
-                  ? 'ඔබගේ PayHere Dashboard එකෙහි ඇති Merchant ID සහ Secret මෙහි ඇතුළත් කරන්න (නැතහොත් Sandbox පෙරනිමි තබන්න).'
-                  : 'Enter your Merchant ID and Secret from your PayHere Dashboard (or leave default for Sandbox testing).'}
+                Active profile: <strong className="text-amber-300">{PAYHERE_KEYS[selectedKeyProfile].name}</strong>
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    App ID / Merchant ID:
+                    App ID:
                   </label>
                   <input
                     type="text"
                     value={merchantId}
                     onChange={(e) => setMerchantId(e.target.value)}
-                    placeholder="PayHere App ID / Merchant ID"
+                    placeholder="PayHere App ID"
                     className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/15 text-white font-mono text-xs focus:outline-none focus:border-[#E63946]"
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    App Secret / Merchant Secret:
+                    App Secret:
                   </label>
                   <input
                     type="password"
